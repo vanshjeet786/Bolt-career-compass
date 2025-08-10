@@ -31,7 +31,6 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
         {layers.map((layer, index) => {
           const isCompleted = completedLayers.includes(layer.id);
           const isCurrent = index === currentLayerIndex;
-          const isUpcoming = index > currentLayerIndex;
           
           return (
             <div 

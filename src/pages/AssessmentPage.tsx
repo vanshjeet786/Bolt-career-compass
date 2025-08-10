@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ASSESSMENT_LAYERS } from '../data/assessmentLayers';
-import { CAREER_MAPPING, CAREER_DETAILS } from '../data/careerMapping';
+import { CAREER_MAPPING } from '../data/careerMapping';
 import { AssessmentProgress } from '../components/Assessment/AssessmentProgress';
 import { AssessmentLayerComponent } from '../components/Assessment/AssessmentLayer';
-import { AssessmentResponse, Assessment, CareerRecommendation, User } from '../types';
+import { AssessmentResponse, Assessment, User } from '../types';
 
 interface AssessmentPageProps {
   user: User;

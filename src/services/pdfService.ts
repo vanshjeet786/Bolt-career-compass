@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export class PDFService {
   async generateReport(
@@ -45,8 +44,8 @@ export class PDFService {
     pdf.text('Top Intelligence Areas:', 20, yPosition);
     yPosition += 8;
     
-    topScores.forEach(([category, score], index) => {
-      pdf.text(`${index + 1}. ${category}: ${(score as number).toFixed(1)}/5.0`, 25, yPosition);
+    topScores.forEach(([category, score], i) => {
+      pdf.text(`${i + 1}. ${category}: ${(score as number).toFixed(1)}/5.0`, 25, yPosition);
       yPosition += 8;
     });
     
@@ -60,7 +59,7 @@ export class PDFService {
     pdf.setFontSize(12);
     pdf.setTextColor(0, 0, 0);
     
-    userResults.careers.slice(0, 8).forEach((career, index) => {
+    userResults.careers.slice(0, 8).forEach((career) => {
       pdf.text(`• ${career}`, 25, yPosition);
       yPosition += 8;
     });

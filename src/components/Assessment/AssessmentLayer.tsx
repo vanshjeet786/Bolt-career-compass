@@ -25,6 +25,10 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
   careers
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  useEffect(() => {
+    setCurrentQuestionIndex(0);
+  }, [layer.id]);
   
   // Flatten all questions from all categories
   const allQuestions: Question[] = [];
