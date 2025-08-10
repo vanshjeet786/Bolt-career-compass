@@ -32,7 +32,7 @@ export class AIService {
     await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 800));
     
     const topCategory = Object.entries(userScores).reduce((a, b) => 
-      userScores[a[0]] > userScores[b[0]] ? a : b
+      a[1] > b[1] ? a : b
     )[0];
     
     const suggestions: Record<string, string> = {
@@ -50,7 +50,7 @@ export class AIService {
       `Based on your ${topCategory} strengths, consider how this question relates to your natural abilities. Think about specific examples from your experience that demonstrate these strengths.`;
   }
 
-  async generateCareerRecommendations(scores: Record<string, number>, responses: any[]): Promise<string> {
+  async generateCareerRecommendations(scores: Record<string, number>): Promise<string> {
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     const topCategories = Object.entries(scores)
@@ -68,7 +68,7 @@ I'd particularly recommend exploring roles in technology, design, and education,
 What aspects of these recommendations resonate most with you? I'm here to help you explore any of these paths further!`;
   }
 
-  async chatResponse(message: string, context?: any): Promise<string> {
+  async chatResponse(): Promise<string> {
     await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
     
     const responses = [

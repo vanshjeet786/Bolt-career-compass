@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, DollarSign, Users, Star } from 'lucide-react';
+import { TrendingUp, DollarSign, Star } from 'lucide-react';
 import { CareerRecommendation } from '../../types';
 import { Card } from '../ui/Card';
 
