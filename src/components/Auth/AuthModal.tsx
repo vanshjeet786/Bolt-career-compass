@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '../../services/supabaseClient';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 
@@ -12,6 +13,7 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,36 +25,84 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock successful authentication
-    const user = {
-      id: Date.now().toString(),
-      name: formData.name || formData.email.split('@')[0],
-      email: formData.email
-    };
-    
-    onAuth(user);
-    setIsLoading(false);
-    onClose();
+    try {
+      if (isLogin) {
+        // Sign in existing user
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          const user = {
+            id: data.user.id,
+            name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+            email: data.user.email || formData.email,
+            createdAt: new Date(data.user.created_at),
+            assessments: []
+          };
+          onAuth(user);
+          onClose();
+        }
+      } else {
+        // Sign up new user
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.name,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          const user = {
+            id: data.user.id,
+            name: formData.name,
+            email: formData.email,
+            createdAt: new Date(),
+            assessments: []
+          };
+          onAuth(user);
+          onClose();
+        }
+      }
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      setError(error.message || 'Authentication failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleAuth = async () => {
+    setError('');
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const user = {
-      id: Date.now().toString(),
-      name: 'John Doe',
-      email: 'john.doe@gmail.com'
-    };
-    
-    onAuth(user);
-    setIsLoading(false);
-    onClose();
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      
+      if (error) throw error;
+      
+      // OAuth will redirect, so we don't need to handle the response here
+    } catch (error: any) {
+      console.error('Google auth error:', error);
+      setError(error.message || 'Google authentication failed. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -69,6 +119,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
             <X className="w-6 h-6" />
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (

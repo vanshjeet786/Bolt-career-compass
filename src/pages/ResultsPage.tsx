@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, MessageCircle } from 'lucide-react';
+import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink } from 'lucide-react';
 import { Assessment, CareerRecommendation, User } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
@@ -18,6 +18,8 @@ interface ResultsPageProps {
 export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user }) => {
   const [aiInsights, setAiInsights] = useState<string>('');
   const [showChat, setShowChat] = useState(false);
+  const [sortBy, setSortBy] = useState<'match' | 'salary' | 'name'>('match');
+  const [filterBy, setFilterBy] = useState<'all' | 'high-growth' | 'high-salary'>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,11 +57,48 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user }) =>
         skills: ['Various skills required'],
         outlook: 'Positive growth expected',
         salaryRange: '$50k - $80k',
-        description: 'A promising career path that aligns with your assessment results.'
+        description: 'A promising career path that aligns with your assessment results.',
+        dailyTasks: ['Perform job-related tasks', 'Collaborate with team members'],
+        education: 'Relevant degree or experience',
+        growthOpportunities: ['Senior positions', 'Management roles']
       };
     }).sort((a, b) => b.match - a.match);
   };
 
+  const filteredAndSortedCareers = () => {
+    let careers = generateCareerRecommendations();
+    
+    // Apply filters
+    if (filterBy === 'high-growth') {
+      careers = careers.filter(career => 
+        career.outlook.toLowerCase().includes('excellent') || 
+        career.outlook.toLowerCase().includes('very good')
+      );
+    } else if (filterBy === 'high-salary') {
+      careers = careers.filter(career => {
+        const salaryMatch = career.salaryRange.match(/\$(\d+)k/);
+        return salaryMatch && parseInt(salaryMatch[1]) >= 80;
+      });
+    }
+    
+    // Apply sorting
+    careers.sort((a, b) => {
+      switch (sortBy) {
+        case 'match':
+          return b.match - a.match;
+        case 'salary':
+          const aSalary = parseInt(a.salaryRange.match(/\$(\d+)k/)?.[1] || '0');
+          const bSalary = parseInt(b.salaryRange.match(/\$(\d+)k/)?.[1] || '0');
+          return bSalary - aSalary;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
+    
+    return careers;
+  };
   const handleDownloadReport = async () => {
     try {
       await pdfService.generateReport({
@@ -73,7 +112,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user }) =>
     }
   };
 
-  const careerRecommendations = generateCareerRecommendations();
+  const careerRecommendations = filteredAndSortedCareers();
   const numericalScores = Object.entries(assessment.scores)
     .reduce((acc, [key, value]) => {
       if (typeof value === 'number') {
@@ -146,30 +185,124 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user }) =>
             </div>
 
             {/* Career Recommendations */}
-            <div>
+            <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">
                 Recommended Career Paths
               </h2>
+              
+              {/* Filters and Sorting */}
+              <div className="flex flex-wrap gap-4 items-center justify-between bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-gray-600" />
+                    <select
+                      value={filterBy}
+                      onChange={(e) => setFilterBy(e.target.value as any)}
+                      className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="all">All Careers</option>
+                      <option value="high-growth">High Growth</option>
+                      <option value="high-salary">High Salary ($80k+)</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="w-4 h-4 text-gray-600" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="match">Best Match</option>
+                      <option value="salary">Salary Range</option>
+                      <option value="name">Alphabetical</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  Showing {careerRecommendations.length} career{careerRecommendations.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {careerRecommendations.slice(0, 6).map((career, index) => (
+                {careerRecommendations.map((career, index) => (
                   <CareerCard key={index} career={career} />
                 ))}
+              </div>
+              
+              {/* Next Steps Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Ready to Take Action?</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <a
+                    href="https://www.linkedin.com/jobs/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <ExternalLink className="w-5 h-5 text-blue-600 mr-3" />
+                    <div>
+                      <h4 className="font-semibold text-gray-800">Find Jobs</h4>
+                      <p className="text-sm text-gray-600">Search for opportunities</p>
+                    </div>
+                  </a>
+                  
+                  <a
+                    href="https://www.coursera.org/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <ExternalLink className="w-5 h-5 text-green-600 mr-3" />
+                    <div>
+                      <h4 className="font-semibold text-gray-800">Learn Skills</h4>
+                      <p className="text-sm text-gray-600">Take online courses</p>
+                    </div>
+                  </a>
+                  
+                  <a
+                    href="https://www.mentorship.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <ExternalLink className="w-5 h-5 text-purple-600 mr-3" />
+                    <div>
+                      <h4 className="font-semibold text-gray-800">Find Mentors</h4>
+                      <p className="text-sm text-gray-600">Connect with experts</p>
+                    </div>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Chat Sidebar */}
-          <div className="lg:col-span-1">
-            {showChat && (
-              <div className="sticky top-8">
+          <div className="lg:col-span-1 space-y-6">
+            {/* AI Chat - Always visible but collapsible */}
+            <div className="sticky top-8">
+              {showChat ? (
                 <AIChat 
                   userResults={{
                     scores: numericalScores,
                     careers: assessment.recommendedCareers
                   }} 
                 />
-              </div>
-            )}
+              ) : (
+                <Card className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Need Guidance?</h3>
+                  <p className="text-gray-600 mb-4">Chat with our AI counselor for personalized advice about your results.</p>
+                  <Button
+                    icon={MessageCircle}
+                    onClick={() => setShowChat(true)}
+                    className="w-full"
+                  >
+                    Start Conversation
+                  </Button>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
       </div>

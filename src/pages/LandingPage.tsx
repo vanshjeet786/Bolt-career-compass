@@ -50,14 +50,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Discover Your
+              Navigate Your
             </span>
             <br />
-            <span className="text-gray-800">Perfect Career Path</span>
+            <span className="text-gray-800">Career Journey</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Take our comprehensive AI-driven assessment to uncover your strengths, 
-            explore career opportunities, and create a personalized roadmap to success.
+            explore career opportunities, and navigate your path to professional success.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button

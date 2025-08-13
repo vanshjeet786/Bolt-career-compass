@@ -46,6 +46,9 @@ export interface CareerRecommendation {
   outlook: string;
   salaryRange: string;
   description: string;
+  dailyTasks?: string[];
+  education?: string;
+  growthOpportunities?: string[];
 }
 
 export interface ChatMessage {

@@ -28,9 +28,9 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Career Counselor
+                Career Compass
               </h1>
-              <p className="text-sm text-gray-600">Discover Your Perfect Career Path</p>
+              <p className="text-sm text-gray-600">Navigate Your Career Journey</p>
             </div>
           </div>
 

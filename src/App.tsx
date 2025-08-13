@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './services/supabaseClient';
 import { Header } from './components/Layout/Header';
 import { AuthModal } from './components/Auth/AuthModal';
 import { LandingPage } from './pages/LandingPage';
@@ -29,10 +30,63 @@ function App() {
   };
 
   const handleLogout = () => {
-    setUser(null);
-    setCurrentAssessment(null);
-    setCurrentState('landing');
+    const logout = async () => {
+      try {
+        await supabase.auth.signOut();
+        setUser(null);
+        setCurrentAssessment(null);
+        setCurrentState('landing');
+      } catch (error) {
+        console.error('Logout error:', error);
+        // Still clear local state even if logout fails
+        setUser(null);
+        setCurrentAssessment(null);
+        setCurrentState('landing');
+      }
+    };
+    logout();
   };
+
+  // Check for existing session on app load
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const user = {
+          id: session.user.id,
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || '',
+          createdAt: new Date(session.user.created_at),
+          assessments: []
+        };
+        setUser(user);
+      }
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const user = {
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            email: session.user.email || '',
+            createdAt: new Date(session.user.created_at),
+            assessments: []
+          };
+          setUser(user);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setCurrentAssessment(null);
+          setCurrentState('landing');
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleAssessmentComplete = (assessment: Assessment) => {
     setCurrentAssessment(assessment);

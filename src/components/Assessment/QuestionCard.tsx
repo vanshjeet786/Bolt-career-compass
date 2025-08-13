@@ -36,8 +36,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
   const handleGetExplanation = async () => {
-    if (explanation) {
-      setShowExplanation(!showExplanation);
+    if (showExplanation) {
+      // Reset explanation when hiding
+      setShowExplanation(false);
+      setExplanation('');
       return;
     }
     
@@ -56,8 +58,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   const handleGetSuggestion = async () => {
-    if (suggestion) {
-      setShowSuggestion(!showSuggestion);
+    if (showSuggestion) {
+      // Reset suggestion when hiding
+      setShowSuggestion(false);
+      setSuggestion('');
       return;
     }
     

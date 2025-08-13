@@ -23,35 +23,71 @@ export const CAREER_DETAILS: Record<string, {
   outlook: string;
   salaryRange: string;
   description: string;
+  dailyTasks: string[];
+  education: string;
+  growthOpportunities: string[];
 }> = {
   'Data Science': {
     skills: ['Python', 'Statistics', 'Machine Learning', 'SQL'],
     outlook: 'Excellent - 35% growth expected',
     salaryRange: '$95k - $165k',
-    description: 'Analyze complex data to help organizations make informed decisions'
+    description: 'Analyze complex data to help organizations make informed decisions',
+    dailyTasks: ['Clean and analyze datasets', 'Build predictive models', 'Create data visualizations', 'Present insights to stakeholders'],
+    education: 'Bachelor\'s in Statistics, Computer Science, or related field',
+    growthOpportunities: ['Senior Data Scientist', 'Data Science Manager', 'Chief Data Officer']
   },
   'Software Development': {
     skills: ['Programming', 'Problem-solving', 'Version Control', 'Testing'],
     outlook: 'Very Good - 25% growth expected',
     salaryRange: '$85k - $150k',
-    description: 'Design, develop, and maintain software applications and systems'
+    description: 'Design, develop, and maintain software applications and systems',
+    dailyTasks: ['Write and review code', 'Debug applications', 'Collaborate with team members', 'Design system architecture'],
+    education: 'Bachelor\'s in Computer Science or equivalent experience',
+    growthOpportunities: ['Senior Developer', 'Tech Lead', 'Engineering Manager', 'CTO']
   },
   'UX Design': {
     skills: ['Design Thinking', 'Prototyping', 'User Research', 'Visual Design'],
     outlook: 'Good - 13% growth expected',
     salaryRange: '$75k - $125k',
-    description: 'Create intuitive and engaging user experiences for digital products'
+    description: 'Create intuitive and engaging user experiences for digital products',
+    dailyTasks: ['Conduct user research', 'Create wireframes and prototypes', 'Design user interfaces', 'Test usability'],
+    education: 'Bachelor\'s in Design, Psychology, or related field',
+    growthOpportunities: ['Senior UX Designer', 'UX Manager', 'Design Director']
   },
   'Teaching': {
     skills: ['Communication', 'Patience', 'Subject Expertise', 'Classroom Management'],
     outlook: 'Stable - 8% growth expected',
     salaryRange: '$45k - $75k',
-    description: 'Educate and inspire the next generation of learners'
+    description: 'Educate and inspire the next generation of learners',
+    dailyTasks: ['Plan and deliver lessons', 'Grade assignments', 'Meet with parents', 'Professional development'],
+    education: 'Bachelor\'s degree plus teaching certification',
+    growthOpportunities: ['Department Head', 'Principal', 'Curriculum Specialist']
   },
   'Journalism': {
     skills: ['Writing', 'Research', 'Interviewing', 'Digital Media'],
     outlook: 'Declining - 3% decrease expected',
     salaryRange: '$40k - $85k',
-    description: 'Investigate, research, and report on news and current events'
+    description: 'Investigate, research, and report on news and current events',
+    dailyTasks: ['Research stories', 'Conduct interviews', 'Write articles', 'Meet deadlines'],
+    education: 'Bachelor\'s in Journalism, Communications, or related field',
+    growthOpportunities: ['Senior Reporter', 'Editor', 'News Director']
+  },
+  'Marketing': {
+    skills: ['Communication', 'Analytics', 'Creativity', 'Digital Marketing'],
+    outlook: 'Good - 10% growth expected',
+    salaryRange: '$50k - $95k',
+    description: 'Develop and execute marketing strategies to promote products and services',
+    dailyTasks: ['Create marketing campaigns', 'Analyze market trends', 'Manage social media', 'Coordinate with teams'],
+    education: 'Bachelor\'s in Marketing, Business, or related field',
+    growthOpportunities: ['Marketing Manager', 'Brand Director', 'CMO']
+  },
+  'Psychology': {
+    skills: ['Active Listening', 'Empathy', 'Research', 'Critical Thinking'],
+    outlook: 'Good - 8% growth expected',
+    salaryRange: '$60k - $120k',
+    description: 'Help individuals understand and overcome mental health challenges',
+    dailyTasks: ['Conduct therapy sessions', 'Assess mental health', 'Develop treatment plans', 'Maintain records'],
+    education: 'Master\'s or Doctoral degree in Psychology',
+    growthOpportunities: ['Clinical Supervisor', 'Private Practice Owner', 'Research Director']
   }
 };
