@@ -9,6 +9,7 @@ interface AIChatProps {
   userResults?: {
     scores: Record<string, number>;
     careers: string[];
+    previousAssessments?: any[];
   };
 }
 
@@ -80,10 +81,15 @@ export const AIChat: React.FC<AIChatProps> = ({ userResults }) => {
   };
 
   return (
-    <Card className="flex flex-col h-96">
+    <Card className="flex flex-col h-[500px] bg-gradient-to-br from-primary-50 to-purple-50 border-primary-200">
       <div className="flex items-center border-b pb-4 mb-4">
-        <Bot className="w-6 h-6 text-blue-600 mr-2" />
-        <h3 className="text-lg font-semibold text-gray-800">AI Career Counselor</h3>
+        <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-2 rounded-full mr-3">
+          <Bot className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-800">AI Career Counselor</h3>
+          <p className="text-xs text-gray-600">Powered by advanced AI • Always learning</p>
+        </div>
       </div>
       
       <div className="flex-1 overflow-y-auto space-y-4 mb-4">
@@ -95,8 +101,8 @@ export const AIChat: React.FC<AIChatProps> = ({ userResults }) => {
             <div
               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                 message.sender === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg'
+                  : 'bg-white text-gray-800 shadow-md border border-gray-200'
               }`}
             >
               <div className="flex items-center mb-1">
@@ -115,13 +121,13 @@ export const AIChat: React.FC<AIChatProps> = ({ userResults }) => {
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-800 max-w-xs lg:max-w-md px-4 py-2 rounded-lg">
+            <div className="bg-white text-gray-800 max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-md border border-gray-200">
               <div className="flex items-center">
                 <Bot className="w-4 h-4 mr-2" />
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
@@ -136,7 +142,7 @@ export const AIChat: React.FC<AIChatProps> = ({ userResults }) => {
           onChange={(e) => setInputText(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Ask me anything about your career results..."
-          className="flex-1 p-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
+          className="flex-1 p-3 border border-gray-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 resize-none"
           rows={2}
           disabled={isLoading}
         />

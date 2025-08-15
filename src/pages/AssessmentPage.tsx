@@ -8,9 +8,10 @@ import { AssessmentResponse, Assessment, User } from '../types';
 interface AssessmentPageProps {
   user: User;
   onComplete: (assessment: Assessment) => void;
+  previousAssessments?: Assessment[];
 }
 
-export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete }) => {
+export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete, previousAssessments = [] }) => {
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0);
   const [responses, setResponses] = useState<AssessmentResponse[]>([]);
   const [completedLayers, setCompletedLayers] = useState<string[]>([]);
@@ -144,6 +145,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               onBack={handleBack}
               userScores={scores}
               careers={generateCareerRecommendations(scores)}
+              previousAssessments={previousAssessments}
             />
           </div>
         </div>

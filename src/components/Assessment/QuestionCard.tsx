@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, Lightbulb } from 'lucide-react';
+import { HelpCircle, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { Question } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -11,6 +11,7 @@ interface QuestionCardProps {
   currentAnswer?: number | string;
   userScores?: Record<string, number>;
   careers?: string[];
+  previousAssessments?: any[];
 }
 
 const LIKERT_OPTIONS = [
@@ -26,12 +27,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onAnswer,
   currentAnswer,
   userScores = {},
-  careers = []
+  careers = [],
+  previousAssessments = []
 }) => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [explanation, setExplanation] = useState('');
-  const [suggestion, setSuggestion] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestionExplanation, setSuggestionExplanation] = useState('');
   const [loadingExplanation, setLoadingExplanation] = useState(false);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
@@ -61,18 +65,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     if (showSuggestion) {
       // Reset suggestion when hiding
       setShowSuggestion(false);
-      setSuggestion('');
+      setSuggestions([]);
+      setSuggestionExplanation('');
+      setSelectedSuggestionIndex(0);
       return;
     }
     
     setLoadingSuggestion(true);
     try {
-      const aiSuggestion = await aiService.suggestAnswer(question.text, userScores, careers);
-      setSuggestion(aiSuggestion);
+      const aiResponse = await aiService.suggestAnswer(question.text, userScores, careers, previousAssessments);
+      setSuggestions(aiResponse.suggestions);
+      setSuggestionExplanation(aiResponse.explanation);
       setShowSuggestion(true);
     } catch (error) {
       console.error('Failed to get suggestion:', error);
-      setSuggestion('Sorry, I couldn\'t generate a suggestion right now. Please try again.');
+      setSuggestions(['Sorry, I couldn\'t generate suggestions right now. Please try again.']);
+      setSuggestionExplanation('');
       setShowSuggestion(true);
     } finally {
       setLoadingSuggestion(false);
@@ -113,24 +121,50 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
 
         {showExplanation && explanation && (
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
             <div className="flex items-start">
-              <HelpCircle className="w-5 h-5 text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
+              <HelpCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-blue-800 mb-1">AI Explanation</p>
-                <p className="text-blue-700">{explanation}</p>
+                <p className="text-sm font-medium text-blue-900 mb-1">AI Explanation</p>
+                <p className="text-blue-800">{explanation}</p>
               </div>
             </div>
           </div>
         )}
 
-        {showSuggestion && suggestion && (
-          <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
+        {showSuggestion && suggestions.length > 0 && (
+          <div className="bg-gradient-to-r from-orange-50 to-pink-50 border-l-4 border-secondary-500 p-4 rounded-r-lg">
             <div className="flex items-start">
-              <Lightbulb className="w-5 h-5 text-orange-400 mt-0.5 mr-3 flex-shrink-0" />
+              <Lightbulb className="w-5 h-5 text-secondary-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-orange-800 mb-1">AI Suggestion</p>
-                <p className="text-orange-700">{suggestion}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-secondary-900">AI Suggestions ({suggestions.length})</p>
+                  {suggestions.length > 1 && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setSelectedSuggestionIndex(Math.max(0, selectedSuggestionIndex - 1))}
+                        disabled={selectedSuggestionIndex === 0}
+                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50"
+                      >
+                        <ChevronUp className="w-4 h-4 text-secondary-600" />
+                      </button>
+                      <span className="text-xs text-secondary-700">
+                        {selectedSuggestionIndex + 1}/{suggestions.length}
+                      </span>
+                      <button
+                        onClick={() => setSelectedSuggestionIndex(Math.min(suggestions.length - 1, selectedSuggestionIndex + 1))}
+                        disabled={selectedSuggestionIndex === suggestions.length - 1}
+                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50"
+                      >
+                        <ChevronDown className="w-4 h-4 text-secondary-600" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <p className="text-secondary-800 mb-2">{suggestions[selectedSuggestionIndex]}</p>
+                {suggestionExplanation && (
+                  <p className="text-xs text-secondary-700 italic">{suggestionExplanation}</p>
+                )}
               </div>
             </div>
           </div>
@@ -142,10 +176,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               <button
                 key={option.value}
                 onClick={() => onAnswer(question.id, option.value)}
-                className={`p-3 text-sm rounded-lg border-2 transition-all duration-200 ${
+                className={`p-3 text-sm rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
                   currentAnswer === option.value
-                    ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-md'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-primary-600 bg-gradient-to-r from-primary-50 to-purple-50 text-primary-800 shadow-lg'
+                    : 'border-gray-200 hover:border-primary-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-primary-50'
                 }`}
               >
                 {option.label}
@@ -156,7 +190,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <textarea
             value={currentAnswer as string || ''}
             onChange={(e) => onAnswer(question.id, e.target.value)}
-            className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+            className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
             rows={4}
             placeholder="Share your thoughts here..."
           />

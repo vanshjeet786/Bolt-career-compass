@@ -13,6 +13,7 @@ interface AssessmentLayerProps {
   onBack: () => void;
   userScores?: Record<string, number>;
   careers?: string[];
+  previousAssessments?: any[];
 }
 
 export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
@@ -22,7 +23,8 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
   onComplete,
   onBack,
   userScores,
-  careers
+  careers,
+  previousAssessments
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -104,6 +106,7 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
         currentAnswer={currentResponse?.response}
         userScores={userScores}
         careers={careers}
+        previousAssessments={previousAssessments}
       />
 
       <div className="flex justify-between items-center mt-8">

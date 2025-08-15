@@ -41,15 +41,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50">
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-8 mx-auto">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full mb-8 mx-auto animate-pulse">
             <Brain className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
               Navigate Your
             </span>
             <br />
@@ -82,8 +82,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {features.map((feature, index) => (
             <Card key={index} hover className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full mb-4">
-                <feature.icon className="w-6 h-6 text-blue-600" />
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-100 to-purple-100 rounded-full mb-4">
+                <feature.icon className="w-6 h-6 text-primary-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">{feature.title}</h3>
               <p className="text-gray-600">{feature.description}</p>
@@ -111,7 +111,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 <div key={index} className="flex items-start space-x-4 p-4">
                   <div className="flex-shrink-0">
                     <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                      <CheckCircle className="w-5 h-5 text-green-600" />
+                      <CheckCircle className="w-5 h-5 text-vibrant-600" />
                     </div>
                   </div>
                   <div>
@@ -128,12 +128,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 py-16">
+      <section className="bg-gradient-to-r from-primary-600 to-purple-600 py-16">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold text-white mb-4">
             Ready to Transform Your Career?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
             Join thousands of professionals who have found their ideal career path 
             through our AI-powered assessment.
           </p>
@@ -141,7 +141,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             size="lg"
             variant="secondary"
             onClick={onGetStarted}
-            className="text-lg px-8 py-4 bg-white text-blue-600 hover:bg-gray-50"
+            className="text-lg px-8 py-4 bg-white text-primary-600 hover:bg-gray-50 hover:scale-105 transition-transform duration-200"
           >
             Start Your Journey Now
           </Button>

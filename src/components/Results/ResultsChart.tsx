@@ -51,7 +51,13 @@ export const ResultsChart: React.FC<ResultsChartProps> = ({ scores, type, title 
                   props.payload.fullName
                 ]}
               />
-              <Bar dataKey="score" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="score" fill="url(#colorGradient)" radius={[4, 4, 0, 0]} />
+              <defs>
+                <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#2563eb" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#9333ea" stopOpacity={0.8}/>
+                </linearGradient>
+              </defs>
             </BarChart>
           ) : (
             <RadarChart data={data.slice(0, 8)} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
@@ -61,8 +67,8 @@ export const ResultsChart: React.FC<ResultsChartProps> = ({ scores, type, title 
               <Radar
                 name="Score"
                 dataKey="score"
-                stroke="#3B82F6"
-                fill="#3B82F6"
+                stroke="#2563eb"
+                fill="#2563eb"
                 fillOpacity={0.3}
                 strokeWidth={2}
               />

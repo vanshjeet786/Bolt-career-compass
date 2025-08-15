@@ -9,6 +9,7 @@ interface HeaderProps {
   onLogout: () => void;
   onDownloadReport?: () => void;
   showDownload?: boolean;
+  onDashboard?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -16,18 +17,19 @@ export const Header: React.FC<HeaderProps> = ({
   onAuthClick, 
   onLogout, 
   onDownloadReport,
-  showDownload = false 
+  showDownload = false,
+  onDashboard
 }) => {
   return (
     <header className="bg-white shadow-lg border-b-2 border-blue-100">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+            <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-2 rounded-lg">
               <Brain className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
                 Career Compass
               </h1>
               <p className="text-sm text-gray-600">Navigate Your Career Journey</p>
@@ -35,6 +37,17 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center space-x-4">
+            {onDashboard && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onDashboard}
+                className="text-primary-600 hover:text-primary-800"
+              >
+                Dashboard
+              </Button>
+            )}
+            
             {showDownload && onDownloadReport && (
               <Button
                 variant="outline"
@@ -49,8 +62,8 @@ export const Header: React.FC<HeaderProps> = ({
             {user ? (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-blue-600" />
+                  <div className="w-8 h-8 bg-gradient-to-r from-primary-100 to-purple-100 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary-600" />
                   </div>
                   <span className="font-medium text-gray-700">{user.name}</span>
                 </div>

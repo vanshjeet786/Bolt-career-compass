@@ -5,15 +5,17 @@ import { AuthModal } from './components/Auth/AuthModal';
 import { LandingPage } from './pages/LandingPage';
 import { AssessmentPage } from './pages/AssessmentPage';
 import { ResultsPage } from './pages/ResultsPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { User, Assessment } from './types';
 
-type AppState = 'landing' | 'assessment' | 'results';
+type AppState = 'landing' | 'dashboard' | 'assessment' | 'results';
 
 function App() {
   const [currentState, setCurrentState] = useState<AppState>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
+  const [userAssessments, setUserAssessments] = useState<Assessment[]>([]);
 
   const handleGetStarted = () => {
     if (user) {
@@ -26,7 +28,7 @@ function App() {
   const handleAuth = (authenticatedUser: User) => {
     setUser(authenticatedUser);
     setShowAuthModal(false);
-    setCurrentState('assessment');
+    setCurrentState('dashboard');
   };
 
   const handleLogout = () => {
@@ -77,9 +79,11 @@ function App() {
             assessments: []
           };
           setUser(user);
+          setCurrentState('dashboard');
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setCurrentAssessment(null);
+          setUserAssessments([]);
           setCurrentState('landing');
         }
       }
@@ -90,7 +94,21 @@ function App() {
 
   const handleAssessmentComplete = (assessment: Assessment) => {
     setCurrentAssessment(assessment);
+    setUserAssessments(prev => [...prev, assessment]);
     setCurrentState('results');
+  };
+
+  const handleStartNewAssessment = () => {
+    setCurrentState('assessment');
+  };
+
+  const handleViewResults = (assessment: Assessment) => {
+    setCurrentAssessment(assessment);
+    setCurrentState('results');
+  };
+
+  const handleBackToDashboard = () => {
+    setCurrentState('dashboard');
   };
 
   const handleDownloadReport = () => {
@@ -108,6 +126,7 @@ function App() {
         onLogout={handleLogout}
         onDownloadReport={currentState === 'results' ? handleDownloadReport : undefined}
         showDownload={currentState === 'results'}
+        onDashboard={user && currentState !== 'dashboard' ? handleBackToDashboard : undefined}
       />
 
       <main>
@@ -115,10 +134,20 @@ function App() {
           <LandingPage onGetStarted={handleGetStarted} />
         )}
 
+        {currentState === 'dashboard' && user && (
+          <DashboardPage
+            user={user}
+            assessments={userAssessments}
+            onStartNewAssessment={handleStartNewAssessment}
+            onViewResults={handleViewResults}
+          />
+        )}
+
         {currentState === 'assessment' && user && (
           <AssessmentPage
             user={user}
             onComplete={handleAssessmentComplete}
+            previousAssessments={userAssessments}
           />
         )}
 
@@ -126,6 +155,7 @@ function App() {
           <ResultsPage
             assessment={currentAssessment}
             user={user}
+            previousAssessments={userAssessments.slice(0, -1)}
           />
         )}
       </main>
