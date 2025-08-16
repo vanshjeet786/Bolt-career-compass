@@ -1,3 +1,5 @@
+import { ChatMessage } from '../types';
+
 interface AIServiceResponse {
   suggestions: string[];
   explanation: string;
@@ -198,26 +200,75 @@ class AIService {
     return response;
   }
 
+  private async callHuggingFaceApi(prompt: string): Promise<string> {
+    const API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
+    const apiToken = import.meta.env.VITE_HUGGINGFACE_API_TOKEN;
+
+    if (!apiToken || apiToken === "YOUR_HUGGINGFACE_API_TOKEN_HERE") {
+      console.error("Hugging Face API token is not set. Please add it to your .env.local file.");
+      return "It looks like the AI service isn't configured correctly. Please ensure your Hugging Face API token is set up to continue.";
+    }
+
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            max_new_tokens: 250,
+            return_full_text: false,
+            temperature: 0.7,
+            top_p: 0.9,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("Hugging Face API Error:", response.status, errorBody);
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const results = await response.json();
+      if (results && Array.isArray(results) && results[0] && results[0].generated_text) {
+        return results[0].generated_text.trim();
+      } else {
+        console.error("Unexpected response format from Hugging Face API:", results);
+        throw new Error("Failed to parse response from AI service.");
+      }
+    } catch (error) {
+      console.error("Error calling Hugging Face API:", error);
+      throw error;
+    }
+  }
+
   async chatResponse(
-    message: string, 
-    userResults?: { scores: Record<string, number>; careers: string[]; previousAssessments?: any[] }
+    message: string,
+    history: ChatMessage[],
+    userResults?: { scores: Record<string, number>; careers: string[] }
   ): Promise<string> {
-    const cacheKey = `chat-${message}-${JSON.stringify(userResults?.scores)}-${Date.now()}`;
-    
-    // Simulate AI chat with learning capabilities
-    const responses = [
-      `Based on your assessment results showing strengths in ${Object.keys(userResults?.scores || {}).slice(0, 2).join(' and ')}, I'd recommend focusing on opportunities that leverage these abilities. ${userResults?.previousAssessments?.length ? 'I notice you\'ve taken assessments before - your growth in key areas is impressive!' : ''} What specific aspect of your career path would you like to explore further?`,
-      
-      `Your career recommendations in ${userResults?.careers?.slice(0, 2).join(' and ') || 'your field'} align well with current market trends. ${userResults?.previousAssessments?.length ? 'Comparing to your previous results, you\'ve shown consistent growth in your core competencies.' : ''} I can help you understand the day-to-day responsibilities, required skills, or growth opportunities in these areas. What interests you most?`,
-      
-      `That's a great question! Given your profile, I'd suggest considering how your unique combination of strengths can create value in your chosen field. ${userResults?.previousAssessments?.length ? 'Your assessment history shows you\'re actively developing your capabilities, which is excellent for career growth.' : ''} Would you like me to elaborate on specific career paths or discuss strategies for skill development?`,
-      
-      `I understand your concern. Career decisions can feel overwhelming, but your assessment results provide a solid foundation for decision-making. Your strengths in ${Object.entries(userResults?.scores || {}).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 1).map(([cat]) => cat)[0] || 'key areas'} suggest you have strong potential for success. ${userResults?.previousAssessments?.length ? 'Your progress since previous assessments shows you\'re on a positive trajectory.' : ''} What specific aspects of your career journey feel most uncertain right now?`
-    ];
-    
-    const response = responses[Math.floor(Math.random() * responses.length)];
-    this.responseCache.set(cacheKey, response);
-    return response;
+    const historyText = history
+      .map(msg => `${msg.sender === 'user' ? 'User' : 'Counselor'}: ${msg.text}`)
+      .join('\n');
+
+    const prompt = `[INST] You are a friendly, expert academic and career counselor. You are talking to a user who has just completed a career assessment. Be encouraging, insightful, and conversational. Keep your responses concise and focused.
+
+Here is the user's assessment summary:
+- Top Recommended Careers: ${userResults?.careers?.join(', ') || 'Not available'}
+- Key Strengths (Scores): ${JSON.stringify(userResults?.scores, null, 2) || 'Not available'}
+
+Here is the conversation history:
+${historyText}
+User: ${message}
+
+Provide a helpful and friendly response to the user's last message.
+[/INST]`;
+
+    return this.callHuggingFaceApi(prompt);
   }
 
   clearCache(): void {
