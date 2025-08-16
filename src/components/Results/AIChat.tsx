@@ -49,7 +49,7 @@ export const AIChat: React.FC<AIChatProps> = ({ userResults }) => {
     setIsLoading(true);
 
     try {
-      const response = await aiService.chatResponse(inputText, userResults);
+      const response = await aiService.chatResponse(inputText, messages, userResults);
       
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
