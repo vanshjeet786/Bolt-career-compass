@@ -68,6 +68,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+
     console.error("An error occurred in the Edge Function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

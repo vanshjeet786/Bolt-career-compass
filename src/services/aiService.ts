@@ -16,7 +16,7 @@ interface UserProfile {
 
 // Helper function to invoke the Supabase Edge Function
 async function invokeHuggingFaceFunction(prompt: string) {
-  const { data, error } = await supabase.functions.invoke('huggingface-ai-service', {
+  const { data, error } = await supabase.functions.invoke('huggingFaceApiKey', {
     body: { prompt },
   });
 
@@ -31,7 +31,6 @@ async function invokeHuggingFaceFunction(prompt: string) {
 
   throw new Error('Invalid response from AI service function.');
 }
-
 
 class AIService {
   private responseCache = new Map<string, any>();
@@ -76,6 +75,55 @@ class AIService {
 
 Question: "${question.text}" [/INST]`;
     return invokeHuggingFaceFunction(prompt);
+  }
+
+  private generateLocalExplanation(questionText: string, layerId: string, categoryId: string): string {
+    const lowerText = questionText.toLowerCase();
+    if (layerId === 'layer1') {
+      if (categoryId === 'Linguistic') {
+        return `This question assesses your linguistic intelligence - your ability to use words effectively. Strong linguistic skills are key for careers in journalism, teaching, or law.`;
+      } else if (categoryId === 'Logical-Mathematical') {
+        return `This evaluates your logical-mathematical intelligence for problem-solving and numbers. High scores suit careers in data science, engineering, or finance.`;
+      } else if (categoryId === 'Visual-Spatial') {
+        return `This measures your ability to visualize concepts, crucial for design or architecture. Strong visual-spatial skills enhance success in creative and technical fields.`;
+      } else if (categoryId === 'Interpersonal') {
+        return `This assesses your ability to work with others, vital for management or counseling. High interpersonal skills indicate strong team collaboration potential.`;
+      } else if (categoryId === 'Intrapersonal') {
+        return `This evaluates self-awareness, key for entrepreneurship or consulting. Strong intrapersonal skills support independent decision-making and self-direction.`;
+      } else if (categoryId === 'Naturalistic') {
+        return `This measures your ability to understand natural systems, ideal for environmental science or biology careers. It highlights pattern recognition in nature.`;
+      }
+    } else if (layerId === 'layer2') {
+      if (categoryId === 'MBTI') {
+        return `This explores your personality preferences to identify suitable work environments. Understanding your traits helps match you to energizing roles.`;
+      } else if (categoryId.includes('Big Five')) {
+        return `This assesses personality dimensions to predict workplace behavior. Responses guide career recommendations for optimal satisfaction.`;
+      }
+    } else if (layerId === 'layer3') {
+      if (categoryId === 'Numerical Aptitude') {
+        return `This evaluates your numerical reasoning, essential for finance or data analysis. Strong skills indicate potential in quantitative fields.`;
+      } else if (categoryId === 'Verbal Aptitude') {
+        return `This assesses language comprehension for communications or teaching. High verbal skills support success in language-driven careers.`;
+      } else if (categoryId === 'Technical Skills') {
+        return `This measures technical competency for IT or engineering roles. Strong skills are valuable across tech-driven industries.`;
+      }
+    } else if (layerId === 'layer4') {
+      return `This examines how your background shapes career opportunities. Responses identify advantages and challenges for personalized career planning.`;
+    } else if (layerId === 'layer5') {
+      return `This explores your interests and values for career alignment. Matching roles to what matters to you ensures long-term satisfaction.`;
+    } else if (layerId === 'layer6') {
+      return `This encourages self-reflection to create a personalized career plan. Thoughtful responses integrate your strengths and aspirations.`;
+    }
+
+    if (lowerText.includes('enjoy') || lowerText.includes('like')) {
+      return `This explores your preferences to identify engaging career paths. Responses ensure recommendations align with your intrinsic motivations.`;
+    } else if (lowerText.includes('good at') || lowerText.includes('ability')) {
+      return `This assesses your strengths to match you with suitable roles. Honest answers highlight talents and growth areas.`;
+    } else if (lowerText.includes('environment') || lowerText.includes('setting')) {
+      return `This examines your ideal work environment for career fit. Responses guide recommendations for supportive company cultures.`;
+    }
+
+    return `This assesses a key aspect of your career profile. Honest responses ensure personalized career recommendations.`;
   }
 
   async suggestAnswer(

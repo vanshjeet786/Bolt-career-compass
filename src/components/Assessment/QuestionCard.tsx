@@ -9,6 +9,8 @@ interface QuestionCardProps {
   question: Question;
   onAnswer: (questionId: string, answer: number | string) => void;
   currentAnswer?: number | string;
+  layerId: string;
+  categoryId: string;
   userScores?: Record<string, number>;
   careers?: string[];
   previousAssessments?: any[];
@@ -26,6 +28,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   onAnswer,
   currentAnswer,
+  layerId,
+  categoryId,
   userScores = {},
   careers = [],
   previousAssessments = []
@@ -39,6 +43,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [loadingExplanation, setLoadingExplanation] = useState(false);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
+  // Reset explanation when answer is selected
+  React.useEffect(() => {
+    if (currentAnswer !== undefined && showExplanation) {
+      setShowExplanation(false);
+      setExplanation('');
+    }
+  }, [currentAnswer]);
   const handleGetExplanation = async () => {
     if (showExplanation) {
       // Reset explanation when hiding
@@ -50,6 +61,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setLoadingExplanation(true);
     try {
       const aiExplanation = await aiService.explainQuestion(question);
+
       setExplanation(aiExplanation);
       setShowExplanation(true);
     } catch (error) {
