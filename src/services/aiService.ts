@@ -14,7 +14,7 @@ interface UserProfile {
 }
 
 async function invokeHuggingFaceFunction(prompt: string) {
-  const { data, error } = await supabase.functions.invoke('hf-assist', {
+  const { data, error } = await supabase.functions.invoke('huggingface-ai-service', {
     body: { prompt },
   });
 
