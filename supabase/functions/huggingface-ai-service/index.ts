@@ -1,24 +1,38 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { corsHeaders } from '../_shared/cors.ts'
+
+// CORS headers are now included directly in this file
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 console.log("Hugging Face AI Service function is ready.");
 
 serve(async (req) => {
-  // This is needed if you're planning to invoke your function from a browser.
+  // Handle preflight requests for CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { prompt } = await req.json();
+    console.log("Function received a request. Method:", req.method);
+    const body = await req.json();
+    console.log("Request body parsed successfully.");
+    const { prompt } = body;
 
-    // 1. Get Hugging Face API key from Supabase secrets
+    if (!prompt) {
+      throw new Error("No 'prompt' found in the request body.");
+    }
+    console.log("Prompt received.");
+
     const huggingFaceApiKey = Deno.env.get('HUGGINGFACE_API_TOKEN');
     if (!huggingFaceApiKey) {
+      console.error("CRITICAL: HUGGINGFACE_API_TOKEN secret not found in environment variables.");
       throw new Error("Hugging Face API token is not set in Supabase secrets.");
     }
+    console.log("Hugging Face API token found.");
 
-    // 2. Call the Hugging Face API
+    console.log("Calling Hugging Face API...");
     const response = await fetch(
       "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
       {
@@ -38,20 +52,24 @@ serve(async (req) => {
         }),
       }
     );
+    console.log("Hugging Face API response status:", response.status);
 
     if (!response.ok) {
       const errorBody = await response.text();
-      throw new Error(`Hugging Face API request failed with status ${response.status}: ${errorBody}`);
+      console.error("Hugging Face API Error:", errorBody);
+      throw new Error(`Hugging Face API request failed with status ${response.status}`);
     }
 
     const responseData = await response.json();
+    console.log("Successfully received and parsed response from Hugging Face API.");
 
-    // 3. Return the response
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (error) {
+
+    console.error("An error occurred in the Edge Function:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

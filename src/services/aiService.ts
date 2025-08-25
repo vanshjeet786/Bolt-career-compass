@@ -6,6 +6,7 @@ interface AIServiceResponse {
   explanation: string;
 }
 
+// This is a simplified UserProfile for the AI service context
 interface UserProfile {
   scores: Record<string, number>;
   careers: string[];
@@ -13,8 +14,9 @@ interface UserProfile {
   personalityTraits?: Record<string, any>;
 }
 
+// Helper function to invoke the Supabase Edge Function
 async function invokeHuggingFaceFunction(prompt: string) {
-  const { data, error } = await supabase.functions.invoke('huggingface-ai-service', {
+  const { data, error } = await supabase.functions.invoke('huggingFaceApiKey', {
     body: { prompt },
   });
 
@@ -22,6 +24,7 @@ async function invokeHuggingFaceFunction(prompt: string) {
     throw new Error(`Supabase function invocation failed: ${error.message}`);
   }
 
+  // The Edge Function returns the direct JSON from Hugging Face
   if (data && Array.isArray(data) && data[0] && data[0].generated_text) {
     return data[0].generated_text.trim();
   }
@@ -32,6 +35,7 @@ async function invokeHuggingFaceFunction(prompt: string) {
 class AIService {
   private responseCache = new Map<string, any>();
   
+  // This function remains a mock as per original implementation
   async generateCareerRecommendations(
     scores: Record<string, number>,
     responses: any[],
@@ -64,31 +68,13 @@ class AIService {
     return categories.map(cat => descriptions[cat] || 'specialized expertise').join(', ');
   }
 
-  async explainQuestion(question: Question, layerId: string, categoryId: string): Promise<string> {
-    const cacheKey = `explain-${layerId}-${categoryId}-${question.text.substring(0, 50)}`;
-    if (this.responseCache.has(cacheKey)) return this.responseCache.get(cacheKey);
+  // --- AI-Powered Functions ---
 
-    try {
-      const prompt = `[INST] You are an expert career counselor. Explain this assessment question in 2-3 sentences: "${question.text}"
+  async explainQuestion(question: Question): Promise<string> {
+    const prompt = `[INST] You are an expert career assessment designer. In a friendly and helpful tone, briefly explain the purpose of the following assessment question and what it is trying to measure. Keep the explanation to about 2-3 sentences.
 
-      Explain:
-      1. What this question is trying to assess
-      2. Why this is important for career guidance
-      3. How responses help determine career fit
-
-      Keep it concise and helpful for someone taking a career assessment. [/INST]`;
-      const aiExplanation = await invokeHuggingFaceFunction(prompt);
-      if (aiExplanation && aiExplanation.length > 20) {
-        this.responseCache.set(cacheKey, aiExplanation);
-        return aiExplanation;
-      }
-    } catch (error) {
-      console.error('Hugging Face API failed for explanation:', error);
-    }
-
-    const explanation = this.generateLocalExplanation(question.text, layerId, categoryId);
-    this.responseCache.set(cacheKey, explanation);
-    return explanation;
+Question: "${question.text}" [/INST]`;
+    return invokeHuggingFaceFunction(prompt);
   }
 
   private generateLocalExplanation(questionText: string, layerId: string, categoryId: string): string {
@@ -142,137 +128,44 @@ class AIService {
 
   async suggestAnswer(
     question: Question,
-    layerId: string,
-    categoryId: string,
     userScores: Record<string, number> = {},
-    careers: string[] = [],
-    previousAssessments?: any[]
+    careers: string[] = []
   ): Promise<AIServiceResponse> {
-    const cacheKey = `suggest-${layerId}-${categoryId}-${question.text.substring(0, 50)}-${JSON.stringify(userScores)}-${careers.join(',')}-${previousAssessments?.length || 0}`;
-    if (this.responseCache.has(cacheKey)) return this.responseCache.get(cacheKey);
+    const prompt = `[INST] You are an expert career counselor providing suggestions for an open-ended assessment question.
+Your response MUST be a valid JSON object.
+
+**User Profile:**
+- Top Recommended Careers: ${careers.join(', ') || 'N/A'}
+- Strengths (Scores): ${JSON.stringify(userScores, null, 2) || 'N/A'}
+
+**Assessment Question:**
+"${question.text}"
+
+**Your Task:**
+1.  Generate 3 distinct, personalized, and encouraging suggestions (80-100 words each) for how the user could answer this question.
+2.  Generate a brief explanation (20-30 words) of the reasoning behind these suggestions.
+3.  Format your entire response as a single JSON object with two keys: "suggestions" (an array of 3 strings) and "explanation" (a single string).
+
+Do not include any text outside of the JSON object.
+[/INST]`;
+
+    const jsonResponse = await invokeHuggingFaceFunction(prompt);
 
     try {
-      const topStrengths = Object.entries(userScores)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
-        .slice(0, 3)
-        .map(([category]) => category);
-
-      const prompt = `[INST] You are an expert career counselor helping someone with their career assessment. 
-
-      User Profile:
-      - Top Strengths: ${topStrengths.join(', ') || 'Not yet determined'}
-      - Recommended Careers: ${careers.slice(0, 3).join(', ') || 'Being determined'}
-      - Assessment Layer: ${layerId}
-      - Category: ${categoryId}
-      ${previousAssessments && previousAssessments.length > 0 ? `- Previous Assessments: ${previousAssessments.length} completed` : ''}
-
-      Question: "${question.text}"
-
-      Provide exactly 3 distinct suggestions for answering this question. Each suggestion should be 80-100 words and personalized based on the user's profile. Format as:
-
-      SUGGESTION 1: [80-100 word suggestion]
-
-      SUGGESTION 2: [80-100 word suggestion]  
-
-      SUGGESTION 3: [80-100 word suggestion]
-
-      Make each suggestion unique, actionable, and relevant to their strengths and career interests. [/INST]`;
-
-      const aiResponse = await invokeHuggingFaceFunction(prompt);
-      if (aiResponse && aiResponse.length > 100) {
-        const suggestions = this.parseAISuggestions(aiResponse);
-        if (suggestions.length >= 3) {
-          const response: AIServiceResponse = {
-            suggestions,
-            explanation: `These suggestions are personalized based on your strengths in ${topStrengths.slice(0, 2).join(' and ') || 'key areas'} and your interest in ${careers.slice(0, 2).join(' and ') || 'your chosen career paths'}.`
-          };
-          this.responseCache.set(cacheKey, response);
-          return response;
-        }
+      const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No valid JSON object found in the AI response.");
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed.suggestions) && typeof parsed.explanation === 'string') {
+        return parsed;
       }
+      throw new Error("Parsed JSON does not match the expected format.");
     } catch (error) {
-      console.error('Hugging Face API failed for suggestions:', error);
+      console.error("Failed to parse AI suggestion response:", error);
+      return {
+        suggestions: ["I'm having a little trouble thinking of suggestions right now. Please try again in a moment."],
+        explanation: "There was an issue generating a dynamic response."
+      };
     }
-
-    const suggestions = this.generateLocalSuggestions(question.text, layerId, categoryId, userScores, careers, previousAssessments);
-    const response: AIServiceResponse = {
-      suggestions,
-      explanation: `These suggestions are personalized based on your assessment profile and career interests.`
-    };
-    this.responseCache.set(cacheKey, response);
-    return response;
-  }
-
-  private parseAISuggestions(aiResponse: string): string[] {
-    const suggestions: string[] = [];
-    const lines = aiResponse.split('\n');
-    let currentSuggestion = '';
-    
-    for (const line of lines) {
-      if (line.match(/SUGGESTION \d+:/)) {
-        if (currentSuggestion.trim()) suggestions.push(currentSuggestion.trim());
-        currentSuggestion = line.replace(/SUGGESTION \d+:\s*/, '');
-      } else if (currentSuggestion && line.trim()) {
-        currentSuggestion += ' ' + line.trim();
-      }
-    }
-    
-    if (currentSuggestion.trim()) suggestions.push(currentSuggestion.trim());
-    return suggestions.filter(s => s.length > 50);
-  }
-
-  private generateLocalSuggestions(
-    questionText: string,
-    layerId: string,
-    categoryId: string,
-    userScores: Record<string, number>,
-    careers: string[],
-    previousAssessments?: any[]
-  ): string[] {
-    const topStrengths = Object.entries(userScores)
-      .sort(([,a], [,b]) => (b as number) - (a as number))
-      .slice(0, 2)
-      .map(([category]) => category);
-
-    const suggestions: string[] = [];
-    
-    if (questionText.toLowerCase().includes('activities') || questionText.toLowerCase().includes('enjoy')) {
-      suggestions.push(
-        `Based on your ${topStrengths[0] || 'analytical'} strengths, consider activities combining problem-solving with creativity. For example, in ${careers[0] || 'technology'}, build personal projects or join hackathons to showcase skills. These align with your abilities and build a portfolio for employers. Focus on engaging tasks for deeper learning.`
-      );
-      suggestions.push(
-        `Your ${topStrengths[1] || 'communication'} abilities suggest thriving in collaborative settings. Join professional associations or industry meetups related to ${careers[0] || 'your field'}. These provide networking and real-world skill application. Mentoring or leading teams can further enhance your expertise.`
-      );
-      suggestions.push(
-        `Given your interest in ${careers.slice(0, 2).join(' and ') || 'your field'}, explore cross-disciplinary projects or courses. Freelance work or consulting in ${careers[0] || 'your area'} can develop versatility. These activities bridge your skills with new domains for career growth.`
-      );
-    } else if (questionText.toLowerCase().includes('environment') || questionText.toLowerCase().includes('thrive')) {
-      suggestions.push(
-        `Your ${topStrengths[0]?.includes('Inter') ? 'collaborative skills' : 'structured approach'} suits environments with regular feedback and skill development. Seek companies valuing ${topStrengths[0]?.includes('Creative') ? 'innovation' : 'analysis'} to excel in ${careers[0] || 'your field'}.`
-      );
-      suggestions.push(
-        `You’d thrive in balanced environments offering autonomy and collaboration. Look for workplaces with flexible arrangements and data-driven decisions, aligning with your ${topStrengths[1] || 'analytical'} skills and ${careers[0] || 'career goals'}.`
-      );
-      suggestions.push(
-        `Dynamic workplaces with mentorship and learning cultures suit your ${careers[0] || 'interests'}. Seek roles offering variety and growth to leverage your ${topStrengths.join(' and ') || 'skills'} for long-term success.`
-      );
-    } else {
-      suggestions.push(
-        `Reflect on your ${topStrengths[0] || 'core'} strengths to answer authentically. Use examples from your experiences showing skills relevant to ${careers[0] || 'your goals'} for personalized career recommendations.`
-      );
-      suggestions.push(
-        `Frame your response around experiences showcasing skills for ${careers[0] || 'your field'}. Highlight moments of engagement to reveal ideal work environments and role preferences.`
-      );
-      suggestions.push(
-        `Your ${topStrengths.join(' and ') || 'skills'} suggest potential in ${careers[0] || 'your field'}. Provide specific examples of success to ensure accurate, tailored career recommendations.`
-      );
-    }
-
-    if (previousAssessments && previousAssessments.length > 0) {
-      suggestions[0] += ` Building on past assessments, reflect on how your perspective has evolved.`;
-    }
-
-    return suggestions;
   }
 
   async chatResponse(
