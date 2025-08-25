@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ASSESSMENT_LAYERS } from '../data/assessmentLayers';
 import { CAREER_MAPPING } from '../data/careerMapping';
 import { AssessmentProgress } from '../components/Assessment/AssessmentProgress';
@@ -12,10 +12,35 @@ interface AssessmentPageProps {
 }
 
 export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete, previousAssessments = [] }) => {
-  const [currentLayerIndex, setCurrentLayerIndex] = useState(0);
-  const [responses, setResponses] = useState<AssessmentResponse[]>([]);
-  const [completedLayers, setCompletedLayers] = useState<string[]>([]);
-  const [scores, setScores] = useState<Record<string, number>>({});
+  const getInitialState = () => {
+    const savedData = localStorage.getItem(`inProgressAssessment_${user.id}`);
+    if (savedData) {
+      try {
+        return JSON.parse(savedData);
+      } catch (error) {
+        console.error("Error parsing in-progress assessment data:", error);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const initialState = getInitialState();
+
+  const [currentLayerIndex, setCurrentLayerIndex] = useState(initialState?.currentLayerIndex || 0);
+  const [responses, setResponses] = useState<AssessmentResponse[]>(initialState?.responses || []);
+  const [completedLayers, setCompletedLayers] = useState<string[]>(initialState?.completedLayers || []);
+  const [scores, setScores] = useState<Record<string, number>>(initialState?.scores || {});
+
+  useEffect(() => {
+    const inProgressData = {
+      currentLayerIndex,
+      responses,
+      completedLayers,
+      scores,
+    };
+    localStorage.setItem(`inProgressAssessment_${user.id}`, JSON.stringify(inProgressData));
+  }, [currentLayerIndex, responses, completedLayers, scores, user.id]);
 
   const currentLayer = ASSESSMENT_LAYERS[currentLayerIndex];
   const layerResponses = responses.filter(r => r.layerId === currentLayer?.id);
@@ -97,6 +122,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
         mlPrediction: recommendedCareers[0] // Simple prediction for demo
       };
 
+      localStorage.removeItem(`inProgressAssessment_${user.id}`);
       onComplete(assessment);
     }
   };
