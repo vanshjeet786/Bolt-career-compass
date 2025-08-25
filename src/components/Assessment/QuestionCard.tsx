@@ -60,13 +60,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     setLoadingExplanation(true);
     try {
-      const aiExplanation = await aiService.explainQuestion(question);
+      const aiExplanation = await aiService.explainQuestion(question, layerId, categoryId);
 
       setExplanation(aiExplanation);
       setShowExplanation(true);
     } catch (error) {
       console.error('Failed to get explanation:', error);
-      setExplanation('Sorry, I couldn\'t generate an explanation right now. Please try again.');
+      setExplanation('This question helps assess your career-related preferences and abilities. Your honest response contributes to more accurate career recommendations.');
       setShowExplanation(true);
     } finally {
       setLoadingExplanation(false);
@@ -85,14 +85,18 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     setLoadingSuggestion(true);
     try {
-      const aiResponse = await aiService.suggestAnswer(question, userScores, careers, previousAssessments);
+      const aiResponse = await aiService.suggestAnswer(question, userScores, careers);
       setSuggestions(aiResponse.suggestions);
       setSuggestionExplanation(aiResponse.explanation);
       setShowSuggestion(true);
     } catch (error) {
       console.error('Failed to get suggestion:', error);
-      setSuggestions(['Sorry, I couldn\'t generate suggestions right now. Please try again.']);
-      setSuggestionExplanation('');
+      setSuggestions([
+        'Reflect on your past experiences and identify what activities or environments made you feel most engaged and successful.',
+        'Consider the feedback you\'ve received from others about your natural talents and areas where you excel.',
+        'Think about your values and what aspects of work or life are most important to you for long-term satisfaction.'
+      ]);
+      setSuggestionExplanation('These suggestions help you provide thoughtful responses based on self-reflection.');
       setShowSuggestion(true);
     } finally {
       setLoadingSuggestion(false);
