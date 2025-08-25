@@ -49,7 +49,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     setLoadingExplanation(true);
     try {
-      const aiExplanation = await aiService.explainQuestion(question.text);
+      const aiExplanation = await aiService.explainQuestion(question);
       setExplanation(aiExplanation);
       setShowExplanation(true);
     } catch (error) {
@@ -73,7 +73,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     setLoadingSuggestion(true);
     try {
-      const aiResponse = await aiService.suggestAnswer(question.text, userScores, careers, previousAssessments);
+      const aiResponse = await aiService.suggestAnswer(question, userScores, careers, previousAssessments);
       setSuggestions(aiResponse.suggestions);
       setSuggestionExplanation(aiResponse.explanation);
       setShowSuggestion(true);
