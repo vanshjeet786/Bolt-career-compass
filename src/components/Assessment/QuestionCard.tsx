@@ -60,6 +60,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     setLoadingExplanation(true);
     try {
+
       const aiExplanation = await aiService.explainQuestion(question.text, layerId, categoryId);
       setExplanation(aiExplanation);
       setShowExplanation(true);

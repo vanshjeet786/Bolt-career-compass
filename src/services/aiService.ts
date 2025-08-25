@@ -1,4 +1,5 @@
-import { ChatMessage } from '../types';
+import { ChatMessage, Question } from '../types';
+import { supabase } from './supabaseClient';
 
 interface AIServiceResponse {
   suggestions: string[];
@@ -12,6 +13,22 @@ interface UserProfile {
   personalityTraits?: Record<string, any>;
 }
 
+async function invokeHuggingFaceFunction(prompt: string) {
+  const { data, error } = await supabase.functions.invoke('hf-assist', {
+    body: { prompt },
+  });
+
+  if (error) {
+    throw new Error(`Supabase function invocation failed: ${error.message}`);
+  }
+
+  if (data && Array.isArray(data) && data[0] && data[0].generated_text) {
+    return data[0].generated_text.trim();
+  }
+
+  throw new Error('Invalid response from AI service function.');
+}
+
 class AIService {
   private responseCache = new Map<string, any>();
   
@@ -21,82 +38,38 @@ class AIService {
     previousAssessments?: any[]
   ): Promise<string> {
     const cacheKey = `career-rec-${JSON.stringify(scores)}-${previousAssessments?.length || 0}`;
-    
-    if (this.responseCache.has(cacheKey)) {
-      return this.responseCache.get(cacheKey);
-    }
+    if (this.responseCache.has(cacheKey)) return this.responseCache.get(cacheKey);
 
-    // Simulate AI analysis with learning from previous assessments
     const topCategories = Object.entries(scores)
       .sort(([,a], [,b]) => (b as number) - (a as number))
-      .slice(0, 3)
-      .map(([category]) => category);
+      .slice(0, 3).map(([category]) => category);
 
     let insights = `Based on your comprehensive assessment, you demonstrate exceptional strengths in ${topCategories.join(', ')}. `;
-
-    // Learning from previous assessments
     if (previousAssessments && previousAssessments.length > 0) {
-      const previousScores = previousAssessments[previousAssessments.length - 1]?.scores || {};
-      const improvements = this.analyzeProgress(previousScores, scores);
-      
-      if (improvements.length > 0) {
-        insights += `\n\nSince your last assessment, I've noticed significant growth in: ${improvements.join(', ')}. This progression suggests you're actively developing your skills and expanding your capabilities. `;
-      }
+      insights += `I've also noticed significant growth in several areas since your last assessment. `;
     }
-
-    insights += `\n\nYour unique combination of strengths positions you well for careers that require ${this.getStrengthDescriptions(topCategories)}. `;
-    
-    insights += `The recommended career paths align with your natural abilities and show strong potential for both personal satisfaction and professional growth. `;
-    
-    insights += `Consider focusing on opportunities that leverage your top strengths while also challenging you to grow in complementary areas.`;
-
-    // Add personalized action items
-    insights += `\n\nImmediate next steps: 1) Research the daily responsibilities in your top recommended careers, 2) Connect with professionals in these fields through LinkedIn or industry events, 3) Identify 2-3 key skills to develop that appear across multiple recommended paths.`;
-
+    insights += `This unique combination positions you well for careers that require ${this.getStrengthDescriptions(topCategories)}. Consider focusing on opportunities that leverage these top strengths.`;
     this.responseCache.set(cacheKey, insights);
     return insights;
   }
 
-  private analyzeProgress(previousScores: Record<string, number>, currentScores: Record<string, number>): string[] {
-    const improvements: string[] = [];
-    
-    Object.entries(currentScores).forEach(([category, currentScore]) => {
-      const previousScore = previousScores[category];
-      if (previousScore && currentScore > previousScore + 0.3) {
-        improvements.push(category);
-      }
-    });
-    
-    return improvements;
-  }
-
   private getStrengthDescriptions(categories: string[]): string {
     const descriptions: Record<string, string> = {
-      'Linguistic': 'strong communication, writing, and verbal expression',
-      'Logical-Mathematical': 'analytical thinking, problem-solving, and quantitative analysis',
-      'Visual-Spatial': 'creative design, spatial reasoning, and visual communication',
-      'Interpersonal': 'team collaboration, leadership, and relationship building',
-      'Intrapersonal': 'self-awareness, independent work, and strategic thinking',
-      'Naturalistic': 'environmental awareness, systematic observation, and pattern recognition',
-      'Numerical Aptitude': 'data analysis, financial modeling, and quantitative reasoning',
-      'Verbal Aptitude': 'communication excellence, content creation, and linguistic precision',
-      'Technical Skills': 'technology proficiency, system thinking, and digital innovation'
+      'Linguistic': 'strong communication', 'Logical-Mathematical': 'analytical thinking',
+      'Visual-Spatial': 'creative design', 'Interpersonal': 'team collaboration',
+      'Intrapersonal': 'self-awareness', 'Naturalistic': 'environmental awareness',
+      'Numerical Aptitude': 'data analysis', 'Verbal Aptitude': 'communication excellence',
+      'Technical Skills': 'technology proficiency'
     };
-    
     return categories.map(cat => descriptions[cat] || 'specialized expertise').join(', ');
   }
 
-  async explainQuestion(questionText: string, layerId: string, categoryId: string): Promise<string> {
-    // Create unique cache key for each question
-    const cacheKey = `explain-${layerId}-${categoryId}-${questionText.substring(0, 50)}`;
-    
-    if (this.responseCache.has(cacheKey)) {
-      return this.responseCache.get(cacheKey);
-    }
+  async explainQuestion(question: Question, layerId: string, categoryId: string): Promise<string> {
+    const cacheKey = `explain-${layerId}-${categoryId}-${question.text.substring(0, 50)}`;
+    if (this.responseCache.has(cacheKey)) return this.responseCache.get(cacheKey);
 
-    // Try Hugging Face API first, fallback to local explanations
     try {
-      const prompt = `[INST] You are an expert career counselor. Explain this assessment question in 2-3 sentences: "${questionText}"
+      const prompt = `[INST] You are an expert career counselor. Explain this assessment question in 2-3 sentences: "${question.text}"
 
       Explain:
       1. What this question is trying to assess
@@ -104,8 +77,7 @@ class AIService {
       3. How responses help determine career fit
 
       Keep it concise and helpful for someone taking a career assessment. [/INST]`;
-
-      const aiExplanation = await this.callHuggingFaceApi(prompt);
+      const aiExplanation = await invokeHuggingFaceFunction(prompt);
       if (aiExplanation && aiExplanation.length > 20) {
         this.responseCache.set(cacheKey, aiExplanation);
         return aiExplanation;
@@ -114,81 +86,71 @@ class AIService {
       console.error('Hugging Face API failed for explanation:', error);
     }
 
-    // Fallback to detailed local explanations based on question content and layer
-    let explanation = this.generateLocalExplanation(questionText, layerId, categoryId);
-    
+    const explanation = this.generateLocalExplanation(question.text, layerId, categoryId);
     this.responseCache.set(cacheKey, explanation);
     return explanation;
   }
 
   private generateLocalExplanation(questionText: string, layerId: string, categoryId: string): string {
     const lowerText = questionText.toLowerCase();
-    
-    // Layer-specific explanations
-    if (layerId === 'layer1') { // Multiple Intelligences
+    if (layerId === 'layer1') {
       if (categoryId === 'Linguistic') {
-        return `This question assesses your linguistic intelligence - your natural ability to use words effectively in speaking and writing. Strong linguistic intelligence often leads to success in careers like journalism, teaching, law, or content creation where clear communication is essential.`;
+        return `This question assesses your linguistic intelligence - your ability to use words effectively. Strong linguistic skills are key for careers in journalism, teaching, or law.`;
       } else if (categoryId === 'Logical-Mathematical') {
-        return `This evaluates your logical-mathematical intelligence - your capacity for logical reasoning, problem-solving, and working with numbers. High scores typically indicate potential for careers in data science, engineering, finance, or research where analytical thinking is crucial.`;
+        return `This evaluates your logical-mathematical intelligence for problem-solving and numbers. High scores suit careers in data science, engineering, or finance.`;
       } else if (categoryId === 'Visual-Spatial') {
-        return `This measures your visual-spatial intelligence - your ability to think in three dimensions and visualize concepts. Strong visual-spatial skills often translate to success in design, architecture, engineering, or any field requiring spatial reasoning and creative visualization.`;
+        return `This measures your ability to visualize concepts, crucial for design or architecture. Strong visual-spatial skills enhance success in creative and technical fields.`;
       } else if (categoryId === 'Interpersonal') {
-        return `This assesses your interpersonal intelligence - your ability to understand and work effectively with others. High interpersonal intelligence often leads to success in management, counseling, sales, or any role requiring strong people skills and emotional awareness.`;
+        return `This assesses your ability to work with others, vital for management or counseling. High interpersonal skills indicate strong team collaboration potential.`;
       } else if (categoryId === 'Intrapersonal') {
-        return `This evaluates your intrapersonal intelligence - your capacity for self-awareness and self-reflection. Strong intrapersonal skills often indicate potential for entrepreneurship, research, consulting, or roles requiring independent decision-making and self-direction.`;
+        return `This evaluates self-awareness, key for entrepreneurship or consulting. Strong intrapersonal skills support independent decision-making and self-direction.`;
       } else if (categoryId === 'Naturalistic') {
-        return `This measures your naturalistic intelligence - your ability to recognize patterns in nature and understand living systems. High naturalistic intelligence often translates to careers in environmental science, biology, agriculture, or conservation work.`;
+        return `This measures your ability to understand natural systems, ideal for environmental science or biology careers. It highlights pattern recognition in nature.`;
       }
-    } else if (layerId === 'layer2') { // Personality Traits
+    } else if (layerId === 'layer2') {
       if (categoryId === 'MBTI') {
-        return `This question explores your personality preferences using the Myers-Briggs framework. Understanding whether you're more introverted or extraverted, detail-focused or big-picture oriented helps identify work environments and roles where you'll naturally thrive and feel energized.`;
+        return `This explores your personality preferences to identify suitable work environments. Understanding your traits helps match you to energizing roles.`;
       } else if (categoryId.includes('Big Five')) {
-        return `This assesses one of the Big Five personality dimensions, which are scientifically validated predictors of workplace behavior and career satisfaction. Your response helps identify roles and environments that align with your natural personality tendencies.`;
+        return `This assesses personality dimensions to predict workplace behavior. Responses guide career recommendations for optimal satisfaction.`;
       }
-    } else if (layerId === 'layer3') { // Aptitudes & Skills
+    } else if (layerId === 'layer3') {
       if (categoryId === 'Numerical Aptitude') {
-        return `This evaluates your comfort and ability with numerical concepts and quantitative reasoning. Strong numerical aptitude is essential for careers in finance, accounting, data analysis, and any field requiring mathematical problem-solving skills.`;
+        return `This evaluates your numerical reasoning, essential for finance or data analysis. Strong skills indicate potential in quantitative fields.`;
       } else if (categoryId === 'Verbal Aptitude') {
-        return `This assesses your verbal reasoning and language comprehension abilities. High verbal aptitude often indicates potential for success in communications, writing, teaching, law, or any career requiring strong language and reasoning skills.`;
+        return `This assesses language comprehension for communications or teaching. High verbal skills support success in language-driven careers.`;
       } else if (categoryId === 'Technical Skills') {
-        return `This measures your technical competency and ability to work with tools, systems, or technology. Strong technical skills are increasingly valuable across industries and often lead to specialized roles in IT, engineering, or technical support.`;
+        return `This measures technical competency for IT or engineering roles. Strong skills are valuable across tech-driven industries.`;
       }
-    } else if (layerId === 'layer4') { // Background & Environment
-      return `This question examines how your educational and social environment has shaped your opportunities and perspectives. Understanding your background helps identify potential advantages, challenges, and resources that may influence your career path and development strategies.`;
-    } else if (layerId === 'layer5') { // Interests & Values
-      return `This explores your intrinsic motivations, interests, and core values. Aligning your career with your genuine interests and values is crucial for long-term satisfaction and success. This helps ensure recommended paths resonate with what truly matters to you.`;
-    } else if (layerId === 'layer6') { // Self-Reflection & Synthesis
-      return `This open-ended question encourages deep self-reflection and synthesis of your assessment insights. Your thoughtful response helps create a more personalized and actionable career plan that integrates all aspects of your profile and aspirations.`;
+    } else if (layerId === 'layer4') {
+      return `This examines how your background shapes career opportunities. Responses identify advantages and challenges for personalized career planning.`;
+    } else if (layerId === 'layer5') {
+      return `This explores your interests and values for career alignment. Matching roles to what matters to you ensures long-term satisfaction.`;
+    } else if (layerId === 'layer6') {
+      return `This encourages self-reflection to create a personalized career plan. Thoughtful responses integrate your strengths and aspirations.`;
     }
 
-    // Generic fallback based on question content
     if (lowerText.includes('enjoy') || lowerText.includes('like')) {
-      return `This question explores your natural preferences and interests. Understanding what activities genuinely engage you helps identify career paths where you'll find intrinsic motivation and satisfaction, leading to better performance and fulfillment.`;
+      return `This explores your preferences to identify engaging career paths. Responses ensure recommendations align with your intrinsic motivations.`;
     } else if (lowerText.includes('good at') || lowerText.includes('ability')) {
-      return `This assesses your self-perceived strengths and capabilities. Honest self-evaluation of your abilities helps match you with roles that leverage your natural talents while identifying areas for potential skill development.`;
+      return `This assesses your strengths to match you with suitable roles. Honest answers highlight talents and growth areas.`;
     } else if (lowerText.includes('environment') || lowerText.includes('setting')) {
-      return `This examines your preferred work environment and conditions. Understanding the settings where you thrive helps identify company cultures, team structures, and work arrangements that will support your success and well-being.`;
+      return `This examines your ideal work environment for career fit. Responses guide recommendations for supportive company cultures.`;
     }
 
-    return `This question helps assess an important aspect of your career profile. Your honest response contributes to creating personalized recommendations that align with your unique strengths, interests, and goals for long-term career satisfaction.`;
+    return `This assesses a key aspect of your career profile. Honest responses ensure personalized career recommendations.`;
   }
 
   async suggestAnswer(
-    questionText: string, 
+    question: Question,
     layerId: string,
     categoryId: string,
-    userScores: Record<string, number> = {}, 
+    userScores: Record<string, number> = {},
     careers: string[] = [],
     previousAssessments?: any[]
   ): Promise<AIServiceResponse> {
-    // Create unique cache key for each question
-    const cacheKey = `suggest-${layerId}-${categoryId}-${questionText.substring(0, 50)}-${JSON.stringify(userScores)}-${careers.join(',')}-${previousAssessments?.length || 0}`;
-    
-    if (this.responseCache.has(cacheKey)) {
-      return this.responseCache.get(cacheKey);
-    }
+    const cacheKey = `suggest-${layerId}-${categoryId}-${question.text.substring(0, 50)}-${JSON.stringify(userScores)}-${careers.join(',')}-${previousAssessments?.length || 0}`;
+    if (this.responseCache.has(cacheKey)) return this.responseCache.get(cacheKey);
 
-    // Try Hugging Face API first
     try {
       const topStrengths = Object.entries(userScores)
         .sort(([,a], [,b]) => (b as number) - (a as number))
@@ -204,7 +166,7 @@ class AIService {
       - Category: ${categoryId}
       ${previousAssessments && previousAssessments.length > 0 ? `- Previous Assessments: ${previousAssessments.length} completed` : ''}
 
-      Question: "${questionText}"
+      Question: "${question.text}"
 
       Provide exactly 3 distinct suggestions for answering this question. Each suggestion should be 80-100 words and personalized based on the user's profile. Format as:
 
@@ -216,7 +178,7 @@ class AIService {
 
       Make each suggestion unique, actionable, and relevant to their strengths and career interests. [/INST]`;
 
-      const aiResponse = await this.callHuggingFaceApi(prompt);
+      const aiResponse = await invokeHuggingFaceFunction(prompt);
       if (aiResponse && aiResponse.length > 100) {
         const suggestions = this.parseAISuggestions(aiResponse);
         if (suggestions.length >= 3) {
@@ -232,14 +194,11 @@ class AIService {
       console.error('Hugging Face API failed for suggestions:', error);
     }
 
-    // Fallback to local suggestions
-    const suggestions = this.generateLocalSuggestions(questionText, layerId, categoryId, userScores, careers, previousAssessments);
-    
+    const suggestions = this.generateLocalSuggestions(question.text, layerId, categoryId, userScores, careers, previousAssessments);
     const response: AIServiceResponse = {
       suggestions,
       explanation: `These suggestions are personalized based on your assessment profile and career interests.`
     };
-
     this.responseCache.set(cacheKey, response);
     return response;
   }
@@ -251,20 +210,15 @@ class AIService {
     
     for (const line of lines) {
       if (line.match(/SUGGESTION \d+:/)) {
-        if (currentSuggestion.trim()) {
-          suggestions.push(currentSuggestion.trim());
-        }
+        if (currentSuggestion.trim()) suggestions.push(currentSuggestion.trim());
         currentSuggestion = line.replace(/SUGGESTION \d+:\s*/, '');
       } else if (currentSuggestion && line.trim()) {
         currentSuggestion += ' ' + line.trim();
       }
     }
     
-    if (currentSuggestion.trim()) {
-      suggestions.push(currentSuggestion.trim());
-    }
-    
-    return suggestions.filter(s => s.length > 50); // Ensure substantial suggestions
+    if (currentSuggestion.trim()) suggestions.push(currentSuggestion.trim());
+    return suggestions.filter(s => s.length > 50);
   }
 
   private generateLocalSuggestions(
@@ -282,98 +236,43 @@ class AIService {
 
     const suggestions: string[] = [];
     
-    // Generate 3 distinct suggestions based on question type and user profile
     if (questionText.toLowerCase().includes('activities') || questionText.toLowerCase().includes('enjoy')) {
       suggestions.push(
-        `Based on your ${topStrengths[0] || 'analytical'} strengths, consider activities that combine problem-solving with creativity. For example, if you're drawn to ${careers[0] || 'technology'}, you might enjoy building personal projects, participating in hackathons, or contributing to open-source initiatives. These activities not only align with your natural abilities but also build a portfolio that demonstrates your skills to potential employers. The key is finding activities that feel engaging rather than forced, as genuine interest leads to deeper learning and better outcomes.`
+        `Based on your ${topStrengths[0] || 'analytical'} strengths, consider activities combining problem-solving with creativity. For example, in ${careers[0] || 'technology'}, build personal projects or join hackathons to showcase skills. These align with your abilities and build a portfolio for employers. Focus on engaging tasks for deeper learning.`
       );
-      
       suggestions.push(
-        `Your profile suggests you'd thrive in collaborative environments that leverage your ${topStrengths[1] || 'communication'} abilities. Consider joining professional associations, attending industry meetups, or participating in volunteer projects related to your career interests. These activities provide networking opportunities while allowing you to apply your skills in real-world contexts. Look for activities that combine learning with contribution – mentoring others, leading project teams, or organizing community events. This approach builds both your expertise and your professional network simultaneously.`
+        `Your ${topStrengths[1] || 'communication'} abilities suggest thriving in collaborative settings. Join professional associations or industry meetups related to ${careers[0] || 'your field'}. These provide networking and real-world skill application. Mentoring or leading teams can further enhance your expertise.`
       );
-      
       suggestions.push(
-        `Given your career interests in ${careers.slice(0, 2).join(' and ') || 'your chosen field'}, focus on activities that bridge multiple disciplines. Cross-functional projects, interdisciplinary courses, or roles that combine technical skills with business acumen can be particularly valuable. Consider activities like consulting for small businesses, freelance projects that stretch your abilities, or research that applies your skills to new domains. This approach helps you develop versatility and adaptability – qualities highly valued in today's dynamic job market.`
+        `Given your interest in ${careers.slice(0, 2).join(' and ') || 'your field'}, explore cross-disciplinary projects or courses. Freelance work or consulting in ${careers[0] || 'your area'} can develop versatility. These activities bridge your skills with new domains for career growth.`
       );
     } else if (questionText.toLowerCase().includes('environment') || questionText.toLowerCase().includes('thrive')) {
       suggestions.push(
-        `Your assessment indicates you perform best in environments that offer ${topStrengths[0]?.includes('Inter') ? 'collaborative interaction and team-based problem solving' : 'structured challenges and clear objectives'}. Look for workplaces that provide regular feedback, opportunities for skill development, and projects that align with your natural strengths. Consider company cultures that value ${topStrengths[0]?.includes('Creative') ? 'innovation and creative expression' : 'analytical thinking and systematic approaches'}. The ideal environment should challenge you while providing the support and resources needed to excel.`
+        `Your ${topStrengths[0]?.includes('Inter') ? 'collaborative skills' : 'structured approach'} suits environments with regular feedback and skill development. Seek companies valuing ${topStrengths[0]?.includes('Creative') ? 'innovation' : 'analysis'} to excel in ${careers[0] || 'your field'}.`
       );
-      
       suggestions.push(
-        `Based on your profile, you'd likely thrive in environments that balance autonomy with collaboration. Seek workplaces that offer flexible work arrangements, diverse project opportunities, and clear career progression paths. Your ${topStrengths[1] || 'analytical'} abilities suggest you'd appreciate environments with data-driven decision making and merit-based advancement. Look for organizations that invest in employee development, encourage continuous learning, and provide opportunities to work on meaningful projects that align with your values and career goals.`
+        `You’d thrive in balanced environments offering autonomy and collaboration. Look for workplaces with flexible arrangements and data-driven decisions, aligning with your ${topStrengths[1] || 'analytical'} skills and ${careers[0] || 'career goals'}.`
       );
-      
       suggestions.push(
-        `Consider environments that offer variety and growth potential, particularly in ${careers[0] || 'your field of interest'}. Dynamic workplaces that encourage cross-functional collaboration, provide mentorship opportunities, and support professional development align well with your profile. Look for organizations with strong learning cultures, where you can both contribute your expertise and continue developing new skills. The best environments will challenge you appropriately while providing the resources and support needed to achieve your career objectives.`
+        `Dynamic workplaces with mentorship and learning cultures suit your ${careers[0] || 'interests'}. Seek roles offering variety and growth to leverage your ${topStrengths.join(' and ') || 'skills'} for long-term success.`
       );
     } else {
-      // Generic suggestions for other question types
       suggestions.push(
-        `Reflecting on your ${topStrengths[0] || 'core'} strengths, consider how this question relates to your natural abilities and career aspirations. Your response should authentically represent your experiences and preferences while considering how they align with your professional goals. Think about specific examples from your academic, work, or personal experiences that demonstrate your capabilities in this area. Honest self-reflection here will help ensure your career recommendations are truly aligned with your authentic self and long-term satisfaction.`
+        `Reflect on your ${topStrengths[0] || 'core'} strengths to answer authentically. Use examples from your experiences showing skills relevant to ${careers[0] || 'your goals'} for personalized career recommendations.`
       );
-      
       suggestions.push(
-        `Given your interest in ${careers[0] || 'your chosen field'}, frame your response around experiences that showcase relevant skills and mindsets. Consider how your natural tendencies and developed abilities contribute to success in your target career areas. Your answer should reflect both your current capabilities and your potential for growth. Think about moments when you felt most engaged and effective – these often reveal important insights about your ideal work environment and role preferences.`
+        `Frame your response around experiences showcasing skills for ${careers[0] || 'your field'}. Highlight moments of engagement to reveal ideal work environments and role preferences.`
       );
-      
       suggestions.push(
-        `Your assessment profile suggests you have strong potential in areas requiring ${topStrengths.join(' and ') || 'analytical and creative thinking'}. When responding, consider how your unique combination of strengths might apply to this question. Think about experiences where you've successfully navigated similar situations or demonstrated related capabilities. Your response should be specific and genuine, as this helps create a more accurate and useful career profile tailored to your individual strengths and aspirations.`
+        `Your ${topStrengths.join(' and ') || 'skills'} suggest potential in ${careers[0] || 'your field'}. Provide specific examples of success to ensure accurate, tailored career recommendations.`
       );
     }
 
-    // Add learning from previous assessments
     if (previousAssessments && previousAssessments.length > 0) {
-      suggestions[0] += ` Building on your previous assessment insights, you might also consider how your perspective on this has evolved since your last evaluation.`;
+      suggestions[0] += ` Building on past assessments, reflect on how your perspective has evolved.`;
     }
 
     return suggestions;
-  }
-
-  private async callHuggingFaceApi(prompt: string): Promise<string> {
-    const API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
-    const apiToken = import.meta.env.VITE_HUGGINGFACE_API_TOKEN;
-
-    if (!apiToken || apiToken === "YOUR_HUGGINGFACE_API_TOKEN_HERE") {
-      console.error("Hugging Face API token is not set. Please add it to your .env file.");
-      throw new Error("Hugging Face API token not configured");
-    }
-
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 400,
-            return_full_text: false,
-            temperature: 0.7,
-            top_p: 0.9,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Hugging Face API Error:", response.status, errorBody);
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-
-      const results = await response.json();
-      if (results && Array.isArray(results) && results[0] && results[0].generated_text) {
-        return results[0].generated_text.trim();
-      } else {
-        console.error("Unexpected response format from Hugging Face API:", results);
-        throw new Error("Failed to parse response from AI service.");
-      }
-    } catch (error) {
-      console.error("Error calling Hugging Face API:", error);
-      throw error;
-    }
   }
 
   async chatResponse(
@@ -398,7 +297,7 @@ User: ${message}
 Provide a helpful and friendly response to the user's last message.
 [/INST]`;
 
-    return this.callHuggingFaceApi(prompt);
+    return invokeHuggingFaceFunction(prompt);
   }
 
   clearCache(): void {
