@@ -109,6 +109,7 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
         userScores={userScores}
         careers={careers}
         previousAssessments={previousAssessments}
+        userResponses={responses}
       />
 
       <div className="flex justify-between items-center mt-8">

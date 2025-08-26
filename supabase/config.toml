@@ -4,7 +4,7 @@
 # working directory name when running `supabase init`.
 project_id = "app"
 
-[functions."huggingface-ai-service"]
+[functions."groq-ai-service"]
 verify_jwt = false
 
 [api]

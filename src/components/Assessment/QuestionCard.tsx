@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { HelpCircle, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
-import { Question } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { HelpCircle, Lightbulb, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Question, AssessmentResponse } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { aiService } from '../../services/aiService';
@@ -14,6 +14,7 @@ interface QuestionCardProps {
   userScores?: Record<string, number>;
   careers?: string[];
   previousAssessments?: any[];
+  userResponses?: AssessmentResponse[];
 }
 
 const LIKERT_OPTIONS = [
@@ -32,50 +33,76 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   categoryId,
   userScores = {},
   careers = [],
-  previousAssessments = []
+  previousAssessments = [],
+  userResponses = []
 }) => {
   const [showExplanation, setShowExplanation] = useState(false);
+  const [showDetailedExplanation, setShowDetailedExplanation] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [explanation, setExplanation] = useState('');
+  const [detailedExplanation, setDetailedExplanation] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionExplanation, setSuggestionExplanation] = useState('');
-  const [loadingExplanation, setLoadingExplanation] = useState(false);
+  const [loadingDetailedExplanation, setLoadingDetailedExplanation] = useState(false);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
 
-  // Reset explanation when answer is selected
-  React.useEffect(() => {
-    if (currentAnswer !== undefined && showExplanation) {
-      setShowExplanation(false);
-      setExplanation('');
-    }
-  }, [currentAnswer]);
-  const handleGetExplanation = async () => {
+  // Reset all states when answer is selected or question changes
+  useEffect(() => {
+    setShowExplanation(false);
+    setShowDetailedExplanation(false);
+    setShowSuggestion(false);
+    setExplanation('');
+    setDetailedExplanation('');
+    setSuggestions([]);
+    setSuggestionExplanation('');
+    setSelectedSuggestionIndex(0);
+  }, [currentAnswer, question.id]);
+
+  const handleGetExplanation = () => {
     if (showExplanation) {
-      // Reset explanation when hiding
       setShowExplanation(false);
       setExplanation('');
       return;
     }
     
-    setLoadingExplanation(true);
-    try {
-      const aiExplanation = await aiService.explainQuestion(question, layerId, categoryId);
+    // Get predetermined explanation immediately
+    const predeterminedExplanation = aiService.getQuestionExplanation(question, layerId, categoryId);
+    setExplanation(predeterminedExplanation);
+    setShowExplanation(true);
+  };
 
-      setExplanation(aiExplanation);
-      setShowExplanation(true);
+  const handleGetDetailedExplanation = async () => {
+    if (showDetailedExplanation) {
+      setShowDetailedExplanation(false);
+      setDetailedExplanation('');
+      return;
+    }
+    
+    setLoadingDetailedExplanation(true);
+    try {
+      const aiExplanation = await aiService.explainQuestionDetailed(
+        question, 
+        layerId, 
+        categoryId, 
+        userResponses
+      );
+      setDetailedExplanation(aiExplanation);
+      setShowDetailedExplanation(true);
     } catch (error) {
-      console.error('Failed to get explanation:', error);
-      setExplanation('This question helps assess your career-related preferences and abilities. Your honest response contributes to more accurate career recommendations.');
-      setShowExplanation(true);
+      console.error('Failed to get detailed explanation:', error);
+      setDetailedExplanation(
+        aiService.getQuestionExplanation(question, layerId, categoryId) + 
+        ' This question helps identify career paths where you can leverage your natural strengths and find long-term satisfaction. Consider how your response reflects your preferences and abilities.'
+      );
+      setShowDetailedExplanation(true);
     } finally {
-      setLoadingExplanation(false);
+      setLoadingDetailedExplanation(false);
     }
   };
 
   const handleGetSuggestion = async () => {
     if (showSuggestion) {
-      // Reset suggestion when hiding
       setShowSuggestion(false);
       setSuggestions([]);
       setSuggestionExplanation('');
@@ -85,18 +112,21 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     setLoadingSuggestion(true);
     try {
-      const aiResponse = await aiService.suggestAnswer(question, userScores, careers);
+      const aiResponse = await aiService.suggestAnswer(
+        question, 
+        userScores, 
+        careers, 
+        previousAssessments,
+        userResponses
+      );
       setSuggestions(aiResponse.suggestions);
       setSuggestionExplanation(aiResponse.explanation);
       setShowSuggestion(true);
     } catch (error) {
       console.error('Failed to get suggestion:', error);
-      setSuggestions([
-        'Reflect on your past experiences and identify what activities or environments made you feel most engaged and successful.',
-        'Consider the feedback you\'ve received from others about your natural talents and areas where you excel.',
-        'Think about your values and what aspects of work or life are most important to you for long-term satisfaction.'
-      ]);
-      setSuggestionExplanation('These suggestions help you provide thoughtful responses based on self-reflection.');
+      const fallbackResponse = aiService['getFallbackSuggestions'](question);
+      setSuggestions(fallbackResponse.suggestions);
+      setSuggestionExplanation(fallbackResponse.explanation);
       setShowSuggestion(true);
     } finally {
       setLoadingSuggestion(false);
@@ -116,7 +146,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               size="sm"
               icon={HelpCircle}
               onClick={handleGetExplanation}
-              loading={loadingExplanation}
               className="text-blue-600 hover:text-blue-800"
             >
               {showExplanation ? 'Hide' : 'Explain'}
@@ -140,9 +169,31 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
             <div className="flex items-start">
               <HelpCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 mb-1">Question Explanation</p>
+                <p className="text-blue-800 mb-3">{explanation}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={Sparkles}
+                  onClick={handleGetDetailedExplanation}
+                  loading={loadingDetailedExplanation}
+                  className="text-purple-600 hover:text-purple-800 text-xs"
+                >
+                  {showDetailedExplanation ? 'Hide Detailed' : 'Explain More'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDetailedExplanation && detailedExplanation && (
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-500 p-4 rounded-r-lg ml-4">
+            <div className="flex items-start">
+              <Sparkles className="w-5 h-5 text-purple-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-blue-900 mb-1">AI Explanation</p>
-                <p className="text-blue-800">{explanation}</p>
+                <p className="text-sm font-medium text-purple-900 mb-1">AI-Powered Detailed Explanation</p>
+                <p className="text-purple-800">{detailedExplanation}</p>
               </div>
             </div>
           </div>
@@ -152,32 +203,36 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <div className="bg-gradient-to-r from-orange-50 to-pink-50 border-l-4 border-secondary-500 p-4 rounded-r-lg">
             <div className="flex items-start">
               <Lightbulb className="w-5 h-5 text-secondary-600 mt-0.5 mr-3 flex-shrink-0" />
-              <div>
+              <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-secondary-900">AI Suggestions ({suggestions.length})</p>
+                  <p className="text-sm font-medium text-secondary-900">
+                    Personalized AI Suggestions ({suggestions.length})
+                  </p>
                   {suggestions.length > 1 && (
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => setSelectedSuggestionIndex(Math.max(0, selectedSuggestionIndex - 1))}
                         disabled={selectedSuggestionIndex === 0}
-                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50"
+                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50 transition-colors"
                       >
                         <ChevronUp className="w-4 h-4 text-secondary-600" />
                       </button>
-                      <span className="text-xs text-secondary-700">
+                      <span className="text-xs text-secondary-700 font-medium">
                         {selectedSuggestionIndex + 1}/{suggestions.length}
                       </span>
                       <button
                         onClick={() => setSelectedSuggestionIndex(Math.min(suggestions.length - 1, selectedSuggestionIndex + 1))}
                         disabled={selectedSuggestionIndex === suggestions.length - 1}
-                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50"
+                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50 transition-colors"
                       >
                         <ChevronDown className="w-4 h-4 text-secondary-600" />
                       </button>
                     </div>
                   )}
                 </div>
-                <p className="text-secondary-800 mb-2">{suggestions[selectedSuggestionIndex]}</p>
+                <div className="bg-white p-3 rounded-lg mb-2 border border-secondary-200">
+                  <p className="text-secondary-800 leading-relaxed">{suggestions[selectedSuggestionIndex]}</p>
+                </div>
                 {suggestionExplanation && (
                   <p className="text-xs text-secondary-700 italic">{suggestionExplanation}</p>
                 )}
@@ -206,7 +261,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <textarea
             value={currentAnswer as string || ''}
             onChange={(e) => onAnswer(question.id, e.target.value)}
-            className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
+            className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all duration-200 resize-none"
             rows={4}
             placeholder="Share your thoughts here..."
           />

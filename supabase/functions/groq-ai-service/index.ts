@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-console.log("Hugging Face AI Service function is ready.");
+console.log("Groq AI Service function is ready.");
 
 serve(async (req) => {
   // Handle preflight requests for CORS
@@ -17,50 +17,49 @@ serve(async (req) => {
     console.log("Function received a request. Method:", req.method);
     const body = await req.json();
     console.log("Request body parsed successfully.");
-    const { prompt } = body;
+    const { messages, max_tokens = 500, temperature = 0.7 } = body;
 
-    if (!prompt) {
-      throw new Error("No 'prompt' found in the request body.");
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error("No 'messages' array found in the request body.");
     }
-    console.log("Prompt received.");
+    console.log("Messages received:", messages.length);
 
-    const huggingFaceApiKey = Deno.env.get('HUGGINGFACE_API_TOKEN');
-    if (!huggingFaceApiKey) {
-      console.error("CRITICAL: HUGGINGFACE_API_TOKEN secret not found in environment variables.");
-      throw new Error("Hugging Face API token is not set in Supabase secrets.");
+    const groqApiKey = Deno.env.get('GROQ_API_KEY');
+    if (!groqApiKey) {
+      console.error("CRITICAL: GROQ_API_KEY secret not found in environment variables.");
+      throw new Error("Groq API key is not set in Supabase secrets.");
     }
-    console.log("Hugging Face API token found.");
+    console.log("Groq API key found.");
 
-    console.log("Calling Hugging Face API...");
+    console.log("Calling Groq API...");
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${huggingFaceApiKey}`,
+          'Authorization': `Bearer ${groqApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 250,
-            return_full_text: false,
-            temperature: 0.7,
-            top_p: 0.9,
-          },
+          model: "llama3-8b-8192",
+          messages: messages,
+          max_tokens: max_tokens,
+          temperature: temperature,
+          top_p: 0.9,
+          stream: false,
         }),
       }
     );
-    console.log("Hugging Face API response status:", response.status);
+    console.log("Groq API response status:", response.status);
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error("Hugging Face API Error:", errorBody);
-      throw new Error(`Hugging Face API request failed with status ${response.status}`);
+      console.error("Groq API Error:", errorBody);
+      throw new Error(`Groq API request failed with status ${response.status}: ${errorBody}`);
     }
 
     const responseData = await response.json();
-    console.log("Successfully received and parsed response from Hugging Face API.");
+    console.log("Successfully received and parsed response from Groq API.");
 
     return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

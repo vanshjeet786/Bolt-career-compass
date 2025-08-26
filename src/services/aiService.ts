@@ -1,4 +1,4 @@
-import { ChatMessage, Question } from '../types';
+import { ChatMessage, Question, AssessmentResponse } from '../types';
 import { supabase } from './supabaseClient';
 
 interface AIServiceResponse {
@@ -6,63 +6,177 @@ interface AIServiceResponse {
   explanation: string;
 }
 
-// This is a simplified UserProfile for the AI service context
-interface UserProfile {
-  scores: Record<string, number>;
-  careers: string[];
-  previousAssessments?: any[];
-  personalityTraits?: Record<string, any>;
-}
-
-// Fallback explanations for each layer and category
-const FALLBACK_EXPLANATIONS: Record<string, Record<string, string>> = {
+// Comprehensive fallback explanations for each layer and category
+const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string>>> = {
   'layer1': {
-    'Linguistic': 'This question assesses your linguistic intelligence - your ability to use words effectively, both in writing and speaking. Strong linguistic skills are essential for careers in journalism, teaching, law, content creation, and public relations. People with high linguistic intelligence often enjoy reading, writing, debating, and storytelling.',
-    'Logical-Mathematical': 'This evaluates your logical-mathematical intelligence, which involves your ability to think logically, solve problems systematically, and work with numbers and patterns. High scores in this area suggest aptitude for careers in data science, engineering, finance, research, programming, and scientific fields.',
-    'Visual-Spatial': 'This measures your visual-spatial intelligence - your ability to visualize concepts, think in three dimensions, and understand spatial relationships. This intelligence is crucial for careers in graphic design, architecture, engineering, art, photography, and any field requiring visual creativity or spatial reasoning.',
-    'Interpersonal': 'This assesses your interpersonal intelligence, which is your ability to understand and work effectively with others. High interpersonal skills indicate potential for success in management, counseling, teaching, sales, human resources, and any role requiring strong team collaboration and communication.',
-    'Intrapersonal': 'This evaluates your intrapersonal intelligence - your level of self-awareness and ability to understand your own emotions, motivations, and goals. Strong intrapersonal skills are valuable for entrepreneurship, consulting, research, writing, and any career requiring independent decision-making and self-direction.',
-    'Naturalistic': 'This measures your naturalistic intelligence, which involves your ability to recognize patterns in nature, understand living systems, and work with the natural world. This intelligence is ideal for careers in environmental science, biology, agriculture, veterinary medicine, and conservation work.'
+    'Linguistic': {
+      'l1-ling-1': 'This question assesses your enjoyment of written expression and creative writing. Strong linguistic intelligence often manifests through a natural inclination toward writing for pleasure, which is essential for careers in journalism, content creation, and literary fields.',
+      'l1-ling-2': 'This evaluates your ability to communicate complex ideas clearly and simply. This skill is crucial for teaching, consulting, technical writing, and any role requiring knowledge transfer or public communication.',
+      'l1-ling-3': 'This measures your comfort with verbal communication and public speaking. High scores indicate potential for careers in law, politics, sales, training, and leadership roles that require persuasive communication.',
+      'l1-ling-4': 'This assesses your analytical reading skills and intellectual curiosity. Strong performance suggests aptitude for research, academia, journalism, and fields requiring critical analysis of information.',
+      'l1-ling-5': 'This evaluates your overall communication effectiveness across written and spoken formats. This fundamental skill supports success in virtually all professional fields, particularly those requiring client interaction or team collaboration.'
+    },
+    'Logical-Mathematical': {
+      'l1-math-1': 'This question measures your analytical thinking and problem-solving enjoyment. High scores indicate strong potential for careers in data science, engineering, research, and any field requiring systematic problem-solving approaches.',
+      'l1-math-2': 'This assesses your comfort with quantitative analysis and data-driven decision making. This skill is essential for finance, business analysis, market research, and strategic planning roles.',
+      'l1-math-3': 'This evaluates your research methodology and systematic investigation skills. Strong performance suggests aptitude for scientific research, product development, consulting, and analytical roles.',
+      'l1-math-4': 'This measures your affinity for STEM subjects and quantitative disciplines. High scores indicate potential for careers in technology, engineering, finance, healthcare, and scientific research.',
+      'l1-math-5': 'This assesses your pattern recognition and logical reasoning abilities. These skills are fundamental for programming, systems analysis, financial modeling, and strategic planning roles.'
+    },
+    'Interpersonal': {
+      'l1-inter-1': 'This question evaluates your collaborative skills and team dynamics comfort. High scores suggest strong potential for project management, team leadership, consulting, and any role requiring effective group coordination.',
+      'l1-inter-2': 'This measures your conflict resolution and mediation abilities. These skills are valuable for human resources, management, counseling, customer service, and leadership positions.',
+      'l1-inter-3': 'This assesses your teaching and mentoring capabilities. Strong performance indicates potential for education, training, coaching, and knowledge transfer roles across various industries.',
+      'l1-inter-4': 'This evaluates your networking and relationship-building skills. These abilities are crucial for sales, business development, public relations, and entrepreneurial ventures.',
+      'l1-inter-5': 'This measures your emotional intelligence and empathy. High scores suggest aptitude for counseling, social work, healthcare, customer relations, and leadership roles requiring people skills.'
+    },
+    'Intrapersonal': {
+      'l1-intra-1': 'This question assesses your self-awareness and reflective thinking abilities. Strong intrapersonal skills are essential for independent consulting, entrepreneurship, research, and roles requiring autonomous decision-making.',
+      'l1-intra-2': 'This evaluates your goal-setting and self-direction capabilities. These skills are crucial for project management, entrepreneurship, freelancing, and any career requiring self-motivation and planning.',
+      'l1-intra-3': 'This measures your self-discipline and independent learning abilities. High scores indicate potential for remote work, consulting, research, and careers requiring continuous self-improvement.',
+      'l1-intra-4': 'This assesses your emotional self-regulation and decision-making awareness. These skills are valuable for leadership, counseling, strategic planning, and high-pressure professional environments.',
+      'l1-intra-5': 'This evaluates your values-based decision making and career self-direction. Strong performance suggests success in entrepreneurship, consulting, and careers requiring alignment between personal values and professional choices.'
+    },
+    'Visual-Spatial': {
+      'l1-spatial-1': 'This question measures your visual creativity and artistic expression abilities. High scores indicate potential for careers in graphic design, fine arts, advertising, media production, and creative industries.',
+      'l1-spatial-2': 'This assesses your three-dimensional thinking and spatial reasoning skills. These abilities are essential for architecture, engineering, product design, and fields requiring spatial problem-solving.',
+      'l1-spatial-3': 'This evaluates your preference for visual learning and information processing. Strong visual-spatial skills support careers in design, data visualization, user experience, and visual communication.',
+      'l1-spatial-4': 'This measures your navigation and spatial orientation abilities. These skills are valuable for geography, urban planning, logistics, and fields requiring spatial analysis and mapping.',
+      'l1-spatial-5': 'This assesses your visual thinking and conceptualization abilities. High scores suggest aptitude for design thinking, innovation, visual arts, and careers requiring creative problem-solving.'
+    },
+    'Naturalistic': {
+      'l1-nature-1': 'This question evaluates your environmental awareness and sustainability interests. High scores indicate potential for careers in environmental science, conservation, sustainable business, and green technology.',
+      'l1-nature-2': 'This measures your observational skills and connection with natural systems. These abilities are valuable for biology, ecology, agriculture, and outdoor education careers.',
+      'l1-nature-3': 'This assesses your attention to environmental details and pattern recognition in nature. Strong performance suggests aptitude for research, environmental monitoring, and field sciences.',
+      'l1-nature-4': 'This evaluates your environmental advocacy and leadership potential. High scores indicate suitability for environmental policy, nonprofit work, and sustainability consulting.',
+      'l1-nature-5': 'This measures your ability to connect academic knowledge with real-world environmental applications. This skill is valuable for environmental education, research, and applied sciences.'
+    }
   },
   'layer2': {
-    'MBTI': 'This question explores your personality preferences based on the Myers-Briggs framework. Understanding whether you lean toward introversion/extraversion, sensing/intuition, thinking/feeling, and judging/perceiving helps identify work environments and roles where you\'ll naturally thrive and feel energized.',
-    'Big Five - Openness': 'This assesses your openness to experience, measuring how curious, creative, and open to new ideas you are. High openness suggests you\'ll thrive in innovative, creative, or research-oriented roles that involve exploring new concepts and approaches.',
-    'Big Five - Conscientiousness': 'This evaluates your conscientiousness - how organized, disciplined, and goal-oriented you are. High conscientiousness is valuable for roles requiring attention to detail, project management, quality control, and systematic approaches to work.',
-    'Big Five - Extraversion': 'This measures your extraversion level, indicating how energized you are by social interaction and external stimulation. High extraversion suggests success in sales, marketing, public relations, event planning, and leadership roles that involve frequent interpersonal interaction.'
+    'MBTI': {
+      'l2-mbti-1': 'This question explores your energy source preferences - whether you recharge through solitude (Introversion) or social interaction (Extraversion). Understanding this helps identify work environments where you\'ll be most productive and satisfied.',
+      'l2-mbti-2': 'This assesses your information processing style - focusing on concrete details (Sensing) versus big-picture possibilities (Intuition). This preference influences your approach to problem-solving and career satisfaction.',
+      'l2-mbti-3': 'This evaluates your decision-making approach - prioritizing logical analysis (Thinking) versus personal values and impact on people (Feeling). This affects your leadership style and career fit.',
+      'l2-mbti-4': 'This measures your lifestyle preferences - structured and planned (Judging) versus flexible and adaptable (Perceiving). This influences your ideal work environment and management style.'
+    },
+    'Big Five - Openness': {
+      'l2-open-1': 'This question measures your openness to new experiences and willingness to try novel approaches. High openness suggests success in innovative, creative, or research-oriented careers that value exploration and change.',
+      'l2-open-2': 'This assesses your creativity and idea generation abilities. Strong imaginative skills are valuable for creative industries, innovation roles, marketing, and problem-solving positions.',
+      'l2-open-3': 'This evaluates your cultural awareness and aesthetic appreciation. High scores indicate potential for careers in arts, culture, education, and fields requiring cultural sensitivity and creative expression.'
+    },
+    'Big Five - Conscientiousness': {
+      'l2-cons-1': 'This question measures your organizational skills and attention to detail. High conscientiousness is valuable for project management, quality assurance, administration, and roles requiring systematic approaches.',
+      'l2-cons-2': 'This assesses your reliability and follow-through abilities. Strong performance indicates suitability for leadership, client-facing roles, and positions requiring consistent delivery and accountability.'
+    },
+    'Big Five - Extraversion': {
+      'l2-extra-1': 'This question evaluates your comfort in social situations and interpersonal energy. High extraversion suggests success in sales, marketing, public relations, and leadership roles requiring frequent social interaction.',
+      'l2-extra-2': 'This measures your comfort with visibility and leadership presence. High scores indicate potential for public speaking, entertainment, politics, and roles requiring charismatic leadership.'
+    }
   },
   'layer3': {
-    'Numerical Aptitude': 'This evaluates your numerical reasoning abilities and comfort with mathematical concepts. Strong numerical aptitude is essential for careers in finance, accounting, data analysis, statistics, economics, and any field requiring quantitative analysis and mathematical problem-solving.',
-    'Verbal Aptitude': 'This assesses your verbal reasoning and language comprehension skills. High verbal aptitude indicates potential for success in communications, writing, editing, teaching, law, journalism, and any career requiring strong language skills and clear communication.',
-    'Technical Skills': 'This measures your technical competency and ability to work with tools, systems, and technology. Strong technical skills are valuable across many industries, particularly in IT, engineering, software development, cybersecurity, and technical support roles.'
+    'Numerical Aptitude': {
+      'l3-num-1': 'This question assesses your comfort with quantitative analysis and numerical reasoning. Strong numerical aptitude is essential for finance, accounting, data analysis, and any career requiring mathematical problem-solving.',
+      'l3-num-2': 'This evaluates your mathematical problem-solving abilities and logical reasoning with numbers. High scores indicate potential for engineering, statistics, economics, and analytical roles.',
+      'l3-num-3': 'This measures your interest and ability in applied mathematics and financial analysis. Strong performance suggests aptitude for business analysis, investment, actuarial science, and quantitative research.'
+    },
+    'Verbal Aptitude': {
+      'l3-verb-1': 'This question assesses your language learning and vocabulary skills. Strong verbal aptitude is valuable for communications, teaching, translation, and any career requiring sophisticated language use.',
+      'l3-verb-2': 'This evaluates your reading comprehension and analytical thinking with text. High scores indicate potential for law, journalism, research, and roles requiring critical analysis of written information.',
+      'l3-verb-3': 'This measures your enjoyment of language-based challenges and wordplay. Strong performance suggests aptitude for creative writing, editing, linguistics, and language-focused careers.'
+    },
+    'Technical Skills': {
+      'l3-tech-1': 'This question evaluates your technical competency and familiarity with industry tools. Strong technical skills are valuable across many fields, particularly in technology, engineering, and specialized professional services.',
+      'l3-tech-2': 'This assesses your technical learning ability and problem-solving with systems. High scores indicate potential for IT, engineering, technical support, and roles requiring rapid technology adoption.',
+      'l3-tech-3': 'This measures your comfort with technical documentation and systematic processes. Strong performance suggests aptitude for technical writing, systems analysis, and process improvement roles.'
+    }
   },
   'layer4': {
-    'Educational Background': 'This examines how your educational experiences and access to learning resources influence your career opportunities. Your educational background provides the foundation for many career paths and helps identify areas where you may need additional development or have natural advantages.',
-    'Career Exposure': 'This assesses your exposure to different career paths through internships, networking, mentorship, and real-world experiences. Greater career exposure helps you make more informed decisions and often leads to better career opportunities through connections and practical knowledge.'
+    'Educational Background': {
+      'l4-edu-1': 'This question assesses your access to quality educational resources and learning opportunities. Strong educational support provides advantages for academic and research careers, while identifying areas for potential skill development.',
+      'l4-edu-2': 'This evaluates your institutional educational quality and academic environment. High-quality educational experiences often correlate with better career preparation and networking opportunities.',
+      'l4-edu-3': 'This measures the innovation and exploration encouragement in your educational environment. Supportive academic environments foster creativity and critical thinking valuable across all career paths.'
+    },
+    'Career Exposure': {
+      'l4-career-1': 'This question evaluates your exposure to diverse career paths and professional networks. Broad career exposure helps in making informed decisions and often leads to better opportunities through connections.',
+      'l4-career-2': 'This assesses your practical work experience and real-world career exploration. Hands-on experience through internships and volunteering provides valuable insights and competitive advantages in job markets.',
+      'l4-career-3': 'This measures the quality of career guidance and counseling available to you. Good career counseling services help optimize career decisions and provide valuable resources for professional development.'
+    }
   },
   'layer5': {
-    'Interests and Passions': 'This explores what genuinely excites and motivates you outside of formal requirements. Understanding your true interests is crucial for long-term career satisfaction, as careers aligned with your passions tend to be more fulfilling and sustainable over time.',
-    'Personal Goals and Values': 'This examines your core values and long-term goals, which should guide your career decisions. Careers that align with your personal values and support your life goals lead to greater satisfaction, better work-life balance, and more meaningful professional experiences.'
+    'Interests and Passions': {
+      'l5-interest-1': 'This question explores your intrinsic motivation and genuine interests. Having clear passions is crucial for long-term career satisfaction and helps identify fields where you\'ll find natural engagement and fulfillment.',
+      'l5-interest-2': 'This assesses your intellectual curiosity and self-directed learning. Strong curiosity indicates potential for research, innovation, and careers requiring continuous learning and adaptation.',
+      'l5-interest-3': 'This evaluates your creative drive and project initiative. High scores suggest entrepreneurial potential and success in creative industries or roles requiring innovation and self-direction.'
+    },
+    'Personal Goals and Values': {
+      'l5-goals-1': 'This question measures your career planning and goal-setting abilities. Clear career goals indicate strong self-direction and increase the likelihood of achieving professional satisfaction and success.',
+      'l5-goals-2': 'This assesses the alignment between your personal values and career decisions. Values-based career choices lead to greater satisfaction, better work-life integration, and more sustainable professional growth.',
+      'l5-goals-3': 'This evaluates your holistic approach to career planning, considering both professional achievement and personal fulfillment. Balanced career planning leads to more sustainable and satisfying professional paths.'
+    }
   },
   'layer6': {
-    'Self_Synthesis': 'This self-reflection question helps you synthesize insights from previous layers to identify patterns in your strengths, preferences, and interests. Taking time to reflect on these connections helps create a clearer picture of your ideal career direction.',
-    'Action_Plan': 'This planning question encourages you to translate your self-knowledge into concrete next steps. Creating specific, actionable plans increases the likelihood that you\'ll successfully pursue careers that align with your assessment results and personal goals.'
+    'Self_Synthesis': {
+      'l6-synth-1': 'This reflection question helps you synthesize your intelligence strengths into actionable career insights. Understanding which activities energize you based on your natural abilities is crucial for identifying fulfilling career paths.',
+      'l6-synth-2': 'This question encourages you to connect your personality traits with ideal work environments. Matching your personality with compatible work settings significantly impacts job satisfaction and performance.',
+      'l6-synth-3': 'This synthesis question helps you identify specific industries and roles that align with your interests and strengths. Focusing on exciting opportunities increases motivation and career satisfaction.',
+      'l6-synth-4': 'This prioritization question helps you narrow down your career exploration to the most promising areas. Having clear top choices enables focused career development and strategic decision-making.'
+    },
+    'Action_Plan': {
+      'l6-action-1': 'This planning question transforms your career insights into concrete next steps. Taking immediate action on career exploration maintains momentum and leads to valuable learning experiences.',
+      'l6-action-2': 'This assessment question helps you identify specific areas for skill development. Recognizing and addressing skill gaps is essential for successful career transitions and professional growth.',
+      'l6-action-3': 'This networking question encourages you to identify potential mentors and supporters. Building a strong professional network is crucial for career advancement and accessing opportunities.'
+    }
   }
 };
 
 // Fallback suggestions for open-ended questions
 const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
-  'layer6': [
-    'Consider reflecting on moments when you felt most engaged and energized in academic or work settings. What activities or environments brought out your best performance?',
-    'Think about the feedback you\'ve received from teachers, supervisors, or peers. What strengths do others consistently recognize in you, and how might these translate to career opportunities?',
-    'Examine your natural problem-solving approach. Do you prefer working with data and logic, collaborating with people, creating visual solutions, or working independently? This can guide your career direction.'
+  'l6-synth-1': [
+    'Consider reflecting on moments when you felt most engaged and energized in academic or work settings. What specific activities or types of thinking brought out your best performance and natural enthusiasm?',
+    'Think about the feedback you\'ve received from teachers, supervisors, or peers about your natural strengths. How do others consistently describe your abilities, and what patterns do you notice in their observations?',
+    'Examine your problem-solving approach across different situations. Do you naturally gravitate toward analytical thinking, creative solutions, working with people, or independent research? This reveals your core intelligence strengths.'
+  ],
+  'l6-synth-2': [
+    'Reflect on work or study environments where you felt most productive and comfortable. Consider factors like team size, structure level, pace, and social interaction that contributed to your success.',
+    'Think about your energy patterns throughout different types of activities. Do you thrive in collaborative settings, quiet focused work, dynamic changing environments, or structured predictable routines?',
+    'Consider your communication and decision-making preferences. Do you prefer direct feedback, collaborative consensus, independent authority, or supportive guidance? This reveals your ideal workplace culture.'
+  ],
+  'l6-synth-3': [
+    'Explore industries that align with your top intelligence strengths and personality preferences. Research specific roles within these industries that match your natural abilities and interests.',
+    'Consider the intersection of your skills, interests, and values. What industries or roles would allow you to use your strengths while pursuing work that feels meaningful and engaging to you?',
+    'Think about emerging fields and evolving roles that might combine multiple areas of your interest. Many exciting careers exist at the intersection of different disciplines and skill sets.'
+  ],
+  'l6-synth-4': [
+    'Prioritize career areas based on the strength of your natural abilities, level of genuine interest, and alignment with your personal values and lifestyle goals.',
+    'Consider which career paths offer the best combination of growth potential, job satisfaction, and alignment with your assessment results from the previous layers.',
+    'Focus on areas where you can leverage your top strengths while pursuing work that genuinely excites you and aligns with your long-term personal and professional goals.'
+  ],
+  'l6-action-1': [
+    'Schedule informational interviews with professionals in your top career areas. Reach out through LinkedIn, alumni networks, or professional associations to learn about day-to-day realities.',
+    'Research and apply for internships, volunteer opportunities, or part-time roles in your areas of interest. Hands-on experience provides invaluable insights into career fit.',
+    'Attend industry events, webinars, or professional meetups related to your top career choices. Networking and learning about industry trends will inform your career decisions.'
+  ],
+  'l6-action-2': [
+    'Identify specific technical skills, certifications, or knowledge areas that are commonly required in your target career fields. Create a learning plan to address these gaps.',
+    'Assess your soft skills like communication, leadership, or project management. Consider how you can develop these through courses, practice opportunities, or mentorship.',
+    'Evaluate your educational background against your career goals. Determine if additional formal education, online courses, or professional development would strengthen your candidacy.'
+  ],
+  'l6-action-3': [
+    'Identify professionals in your target fields who could serve as mentors or advisors. Look for people whose career paths or expertise align with your goals.',
+    'Connect with peers who share similar career interests or are pursuing related paths. Peer networks provide mutual support and shared learning opportunities.',
+    'Engage with professional associations, online communities, or alumni networks related to your career interests. These groups offer ongoing support and career resources.'
   ]
 };
 
-// Helper function to invoke the Supabase Edge Function
-async function invokeHuggingFaceFunction(prompt: string) {
+// Helper function to invoke the Supabase Edge Function for Groq
+async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temperature: number = 0.7) {
   try {
-    const { data, error } = await supabase.functions.invoke('huggingface-ai-service', {
-      body: { prompt },
+    const { data, error } = await supabase.functions.invoke('groq-ai-service', {
+      body: { 
+        messages,
+        max_tokens: maxTokens,
+        temperature
+      },
     });
 
     if (error) {
@@ -70,14 +184,13 @@ async function invokeHuggingFaceFunction(prompt: string) {
       throw new Error(`Supabase function invocation failed: ${error.message}`);
     }
 
-    // The Edge Function returns the direct JSON from Hugging Face
-    if (data && Array.isArray(data) && data[0] && data[0].generated_text) {
-      return data[0].generated_text.trim();
+    if (data && data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content.trim();
     }
 
-    throw new Error('Invalid response from AI service function.');
+    throw new Error('Invalid response from Groq AI service function.');
   } catch (error) {
-    console.error('Error calling Hugging Face function:', error);
+    console.error('Error calling Groq function:', error);
     throw error;
   }
 }
@@ -85,7 +198,6 @@ async function invokeHuggingFaceFunction(prompt: string) {
 class AIService {
   private responseCache = new Map<string, any>();
   
-  // This function remains a mock as per original implementation
   async generateCareerRecommendations(
     scores: Record<string, number>,
     responses: any[],
@@ -118,31 +230,15 @@ class AIService {
     return categories.map(cat => descriptions[cat] || 'specialized expertise').join(', ');
   }
 
-  // --- AI-Powered Functions ---
-
-  async explainQuestion(question: Question, layerId: string, categoryId: string): Promise<string> {
-    try {
-      const prompt = `[INST] You are an expert career assessment designer. In a friendly and helpful tone, briefly explain the purpose of the following assessment question and what it is trying to measure. Keep the explanation to about 2-3 sentences.
-
-Question: "${question.text}"
-Layer: ${layerId}
-Category: ${categoryId} [/INST]`;
-      
-      return await invokeHuggingFaceFunction(prompt);
-    } catch (error) {
-      console.error('Failed to get AI explanation, using fallback:', error);
-      return this.getFallbackExplanation(layerId, categoryId, question.text);
+  // Get predetermined explanation (no AI call needed)
+  getQuestionExplanation(question: Question, layerId: string, categoryId: string): string {
+    const layerExplanations = FALLBACK_EXPLANATIONS[layerId];
+    if (layerExplanations && layerExplanations[categoryId] && layerExplanations[categoryId][question.id]) {
+      return layerExplanations[categoryId][question.id];
     }
-  }
-
-  private getFallbackExplanation(layerId: string, categoryId: string, questionText: string): string {
-    // Try to get specific explanation for this layer and category
-    if (FALLBACK_EXPLANATIONS[layerId] && FALLBACK_EXPLANATIONS[layerId][categoryId]) {
-      return FALLBACK_EXPLANATIONS[layerId][categoryId];
-    }
-
-    // Generic fallbacks based on question content
-    const lowerText = questionText.toLowerCase();
+    
+    // Generic fallback based on question content
+    const lowerText = question.text.toLowerCase();
     if (lowerText.includes('enjoy') || lowerText.includes('like')) {
       return 'This question explores your preferences and interests to identify career paths that will be naturally engaging and motivating for you. Understanding what you enjoy helps ensure long-term career satisfaction.';
     } else if (lowerText.includes('good at') || lowerText.includes('ability')) {
@@ -154,56 +250,157 @@ Category: ${categoryId} [/INST]`;
     return 'This question assesses a key aspect of your career profile. Your honest response helps ensure you receive personalized and accurate career recommendations.';
   }
 
+  // AI-powered detailed explanation
+  async explainQuestionDetailed(
+    question: Question, 
+    layerId: string, 
+    categoryId: string,
+    userResponses?: AssessmentResponse[]
+  ): Promise<string> {
+    try {
+      const contextInfo = userResponses ? this.buildUserContext(userResponses) : '';
+      
+      const messages = [
+        {
+          role: "system",
+          content: "You are an expert career assessment counselor. Provide detailed, insightful explanations about assessment questions that help users understand the deeper purpose and career implications. Be encouraging and specific."
+        },
+        {
+          role: "user",
+          content: `Please provide a detailed explanation of this career assessment question:
+
+Question: "${question.text}"
+Layer: ${layerId} (${this.getLayerDescription(layerId)})
+Category: ${categoryId}
+
+${contextInfo}
+
+Explain:
+1. What this question specifically measures
+2. Why it's important for career planning
+3. How responses might influence career recommendations
+4. Examples of careers where this trait/skill is particularly valuable
+
+Keep the explanation encouraging and actionable, around 150-200 words.`
+        }
+      ];
+      
+      return await invokeGroqFunction(messages, 300, 0.7);
+    } catch (error) {
+      console.error('Failed to get detailed AI explanation:', error);
+      return this.getQuestionExplanation(question, layerId, categoryId) + 
+        ' This question helps identify career paths where you can leverage your natural strengths and find long-term satisfaction.';
+    }
+  }
+
   async suggestAnswer(
     question: Question,
     userScores: Record<string, number> = {},
     careers: string[] = [],
-    previousAssessments?: any[]
+    previousAssessments?: any[],
+    userResponses?: AssessmentResponse[]
   ): Promise<AIServiceResponse> {
     try {
-      const prompt = `[INST] You are an expert career counselor providing suggestions for an open-ended assessment question.
-Your response MUST be a valid JSON object.
+      const contextInfo = this.buildUserContext(userResponses || []);
+      const strengthsInfo = Object.entries(userScores)
+        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .slice(0, 5)
+        .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
+        .join(', ');
 
-**User Profile:**
-- Top Recommended Careers: ${careers.join(', ') || 'N/A'}
-- Strengths (Scores): ${JSON.stringify(userScores, null, 2) || 'N/A'}
+      const messages = [
+        {
+          role: "system",
+          content: "You are an expert career counselor providing personalized suggestions for assessment questions. Generate 3 distinct, specific, and actionable suggestions that are tailored to the user's profile. Each suggestion should be unique and offer a different perspective or approach."
+        },
+        {
+          role: "user",
+          content: `Generate 3 unique, personalized suggestions for answering this career assessment question:
 
-**Assessment Question:**
-"${question.text}"
+Question: "${question.text}"
 
-**Your Task:**
-1. Generate 3 distinct, personalized, and encouraging suggestions (80-100 words each) for how the user could answer this question.
-2. Generate a brief explanation (20-30 words) of the reasoning behind these suggestions.
-3. Format your entire response as a single JSON object with two keys: "suggestions" (an array of 3 strings) and "explanation" (a single string).
+User Profile:
+- Top Strengths: ${strengthsInfo || 'Not yet determined'}
+- Recommended Careers: ${careers.join(', ') || 'Assessment in progress'}
+- Assessment Progress: ${contextInfo}
 
-Do not include any text outside of the JSON object.
-[/INST]`;
+Requirements:
+1. Each suggestion should be 80-120 words
+2. Make each suggestion distinctly different from the others
+3. Base suggestions on the user's demonstrated strengths and interests
+4. Provide specific, actionable examples
+5. Be encouraging and forward-looking
 
-      const jsonResponse = await invokeHuggingFaceFunction(prompt);
+Format your response as JSON:
+{
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
+  "explanation": "Brief explanation of why these suggestions are tailored to the user"
+}`
+        }
+      ];
 
+      const jsonResponse = await invokeGroqFunction(messages, 600, 0.8);
+      
+      // Extract JSON from response
       const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No valid JSON object found in the AI response.");
+      if (!jsonMatch) throw new Error("No valid JSON found in AI response");
+      
       const parsed = JSON.parse(jsonMatch[0]);
-      if (Array.isArray(parsed.suggestions) && typeof parsed.explanation === 'string') {
+      if (Array.isArray(parsed.suggestions) && parsed.suggestions.length === 3 && typeof parsed.explanation === 'string') {
         return parsed;
       }
-      throw new Error("Parsed JSON does not match the expected format.");
+      throw new Error("Invalid JSON structure in AI response");
     } catch (error) {
       console.error("Failed to get AI suggestions, using fallback:", error);
       return this.getFallbackSuggestions(question);
     }
   }
 
+  private buildUserContext(userResponses: AssessmentResponse[]): string {
+    if (userResponses.length === 0) return 'Beginning of assessment';
+    
+    const responsesByCategory: Record<string, number[]> = {};
+    userResponses.forEach(response => {
+      if (typeof response.response === 'number') {
+        if (!responsesByCategory[response.categoryId]) {
+          responsesByCategory[response.categoryId] = [];
+        }
+        responsesByCategory[response.categoryId].push(response.response);
+      }
+    });
+
+    const categoryAverages = Object.entries(responsesByCategory)
+      .map(([category, scores]) => {
+        const avg = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+        return `${category}: ${avg.toFixed(1)}`;
+      })
+      .join(', ');
+
+    return `Current assessment progress - ${categoryAverages}`;
+  }
+
+  private getLayerDescription(layerId: string): string {
+    const descriptions: Record<string, string> = {
+      'layer1': 'Multiple Intelligences',
+      'layer2': 'Personality Traits',
+      'layer3': 'Aptitudes & Skills',
+      'layer4': 'Background & Environment',
+      'layer5': 'Interests & Values',
+      'layer6': 'Self-Reflection & Synthesis'
+    };
+    return descriptions[layerId] || 'Assessment Layer';
+  }
+
   private getFallbackSuggestions(question: Question): AIServiceResponse {
-    const suggestions = FALLBACK_SUGGESTIONS['layer6'] || [
-      'Reflect on your past experiences and identify patterns in what energized and motivated you most.',
-      'Consider the feedback you\'ve received from others about your natural strengths and abilities.',
-      'Think about the activities or subjects that you find yourself naturally drawn to in your free time.'
+    const suggestions = FALLBACK_SUGGESTIONS[question.id] || [
+      'Reflect on your past experiences and identify patterns in what energized and motivated you most. Consider specific situations where you felt engaged and successful.',
+      'Think about the feedback you\'ve received from others about your natural strengths and abilities. What do people consistently recognize in you, and how might this apply to your career?',
+      'Consider your values and what aspects of work or life are most important to you. How can you align your career choices with what matters most to you personally?'
     ];
 
     return {
       suggestions,
-      explanation: 'These suggestions help you reflect on your experiences to provide meaningful responses.'
+      explanation: 'These suggestions are designed to help you reflect deeply on your experiences and provide meaningful responses.'
     };
   }
 
@@ -213,24 +410,32 @@ Do not include any text outside of the JSON object.
     userResults?: { scores: Record<string, number>; careers: string[] }
   ): Promise<string> {
     try {
-      const historyText = history
-        .map(msg => `${msg.sender === 'user' ? 'User' : 'Counselor'}: ${msg.text}`)
-        .join('\n');
+      const messages = [
+        {
+          role: "system",
+          content: `You are a friendly, expert career counselor. You're helping a user who has completed a career assessment. Be encouraging, insightful, and conversational. Keep responses concise and focused.
 
-      const prompt = `[INST] You are a friendly, expert academic and career counselor. You are talking to a user who has just completed a career assessment. Be encouraging, insightful, and conversational. Keep your responses concise and focused.
-
-Here is the user's assessment summary:
+User's Assessment Results:
 - Top Recommended Careers: ${userResults?.careers?.join(', ') || 'Not available'}
-- Key Strengths (Scores): ${JSON.stringify(userResults?.scores, null, 2) || 'Not available'}
+- Key Strengths: ${JSON.stringify(userResults?.scores, null, 2) || 'Not available'}`
+        }
+      ];
 
-Here is the conversation history:
-${historyText}
-User: ${message}
+      // Add conversation history
+      history.slice(-6).forEach(msg => {
+        messages.push({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        });
+      });
 
-Provide a helpful and friendly response to the user's last message.
-[/INST]`;
+      // Add current message
+      messages.push({
+        role: 'user',
+        content: message
+      });
 
-      return await invokeHuggingFaceFunction(prompt);
+      return await invokeGroqFunction(messages, 400, 0.7);
     } catch (error) {
       console.error('Failed to get AI chat response, using fallback:', error);
       return this.getFallbackChatResponse(message, userResults);
