@@ -17,7 +17,7 @@ serve(async (req) => {
     console.log("Function received a request. Method:", req.method);
     const body = await req.json();
     console.log("Request body parsed successfully.");
-    const { messages, max_tokens = 500, temperature = 0.7 } = body;
+    const { messages, max_tokens = 700, temperature = 0.7 } = body;
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error("No 'messages' array found in the request body.");
