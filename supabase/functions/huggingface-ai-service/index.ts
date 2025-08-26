@@ -33,7 +33,7 @@ serve(async (req) => {
 
     console.log("Calling Hugging Face API...");
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
       {
         method: 'POST',
         headers: {
