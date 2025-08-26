@@ -41,7 +41,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192",
+          model: "qwen/qwen3-32b",
           messages: messages,
           max_tokens: max_tokens,
           temperature: temperature,
