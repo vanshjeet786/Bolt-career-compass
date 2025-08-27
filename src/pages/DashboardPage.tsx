@@ -75,14 +75,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const topStrengths = getTopStrengths();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-12">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2">
-                <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
                   Welcome back, {user.name}!
                 </span>
               </h1>
@@ -109,11 +109,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <p className="text-gray-600">Assessments Completed</p>
           </Card>
 
-          <Card className="text-center bg-gradient-to-br from-vibrant-50 to-green-50 border-vibrant-200">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-vibrant-600 to-green-600 rounded-full mb-4">
+          <Card className="text-center bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-4">
               <TrendingUp className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-vibrant-600">
+            <h3 className="text-2xl font-bold text-green-600">
               {progressInsights?.improvements.length || 0}
             </h3>
             <p className="text-gray-600">Areas Improved</p>
@@ -127,11 +127,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <p className="text-gray-600">Top Strengths</p>
           </Card>
 
-          <Card className="text-center bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full mb-4">
+          <Card className="text-center bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-pink-500 to-pink-600 rounded-full mb-4">
               <Target className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-purple-600">
+            <h3 className="text-2xl font-bold text-pink-600">
               {assessments.length > 0 ? assessments[assessments.length - 1].recommendedCareers.length : 0}
             </h3>
             <p className="text-gray-600">Career Matches</p>
@@ -166,7 +166,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-primary-50 rounded-lg hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center space-x-4">
-                        <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-2 rounded-full">
+                        <div className="bg-gradient-to-r from-primary-600 to-secondary-600 p-2 rounded-full">
                           <BarChart3 className="w-4 h-4 text-white" />
                         </div>
                         <div>
@@ -206,20 +206,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
             {/* Progress Insights */}
             {progressInsights && (
-              <Card className="bg-gradient-to-r from-vibrant-50 to-green-50 border-vibrant-200">
-                <h2 className="text-2xl font-bold text-vibrant-800 mb-6 flex items-center">
+              <Card className="bg-gradient-to-r from-green-50 to-green-100 border-green-200">
+                <h2 className="text-2xl font-bold text-green-800 mb-6 flex items-center">
                   <TrendingUp className="w-6 h-6 mr-2" />
                   Your Progress
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="font-semibold text-vibrant-700 mb-3">Recent Improvements</h3>
+                    <h3 className="font-semibold text-green-700 mb-3">Recent Improvements</h3>
                     {progressInsights.improvements.length > 0 ? (
                       <div className="space-y-2">
                         {progressInsights.improvements.map(({ category, change }) => (
                           <div key={category} className="flex items-center justify-between bg-white p-3 rounded-lg">
                             <span className="text-gray-800">{category}</span>
-                            <span className="text-vibrant-600 font-bold">+{change.toFixed(1)}</span>
+                            <span className="text-green-600 font-bold">+{change.toFixed(1)}</span>
                           </div>
                         ))}
                       </div>
@@ -248,7 +248,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div className="space-y-6">
             {/* Current Strengths */}
             {topStrengths.length > 0 && (
-              <Card className="bg-gradient-to-br from-primary-50 to-purple-50 border-primary-200">
+              <Card className="bg-gradient-to-br from-primary-50 to-secondary-50 border-primary-200">
                 <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
                   <Award className="w-5 h-5 mr-2 text-primary-600" />
                   Your Top Strengths
@@ -257,7 +257,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   {topStrengths.map(([category, score], index) => (
                     <div key={category} className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <div className="w-6 h-6 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full flex items-center justify-center mr-3">
+                        <div className="w-6 h-6 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-full flex items-center justify-center mr-3">
                           <span className="text-white text-xs font-bold">{index + 1}</span>
                         </div>
                         <span className="text-gray-800 text-sm">{category}</span>

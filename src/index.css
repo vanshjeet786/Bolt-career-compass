@@ -109,19 +109,7 @@ button, input, textarea, select {
 
 /* Gradient backgrounds */
 .bg-gradient-primary {
-  background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%);
-}
-
-.bg-gradient-secondary {
-  background: linear-gradient(135deg, #FF6347 0%, #FF6B9D 100%);
-}
-
-.bg-gradient-vibrant {
-  background: linear-gradient(135deg, #2ECC71 0%, #3498DB 100%);
-}
-
-.bg-gradient-accent {
-  background: linear-gradient(135deg, #FF6B9D 0%, #9333ea 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #FF6347 100%);
 }
 
 /* Glass morphism effect */
