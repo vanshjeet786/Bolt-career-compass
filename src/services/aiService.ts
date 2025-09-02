@@ -513,3 +513,8 @@ User's Assessment Results:
 }
 
 export const aiService = new AIService();
+        }
+      ]
+    }
+  }
+}
