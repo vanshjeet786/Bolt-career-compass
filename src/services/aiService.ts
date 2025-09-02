@@ -329,13 +329,15 @@ Requirements:
 2. Make each suggestion distinctly different from the others
 3. Base suggestions on the user's demonstrated strengths and interests
 4. Provide specific, actionable examples
-5. Be encouraging and forward-looking
+Qualitative Responses (Layer 6): ${qualitativeInsights}
 
 Format your response as JSON:
 {
   "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
   "explanation": "Brief explanation of why these suggestions are tailored to the user"
-}`
+}
+
+Be warm, encouraging, and specific. Focus on actionable insights.`
         }
       ];
 
