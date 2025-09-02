@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity } from 'lucide-react';
+import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2 } from 'lucide-react';
 import { Assessment, CareerRecommendation, User } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/Accordion';
 import { ResultsChart } from '../components/Results/ResultsChart';
 import { CareerCard } from '../components/Results/CareerCard';
 import { AIChat } from '../components/Results/AIChat';
 import { pdfService } from '../services/pdfService';
 import { aiService } from '../services/aiService';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Legend } from 'recharts';
 
 interface ResultsPageProps {
   assessment: Assessment;
@@ -23,6 +25,17 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   const [filterBy, setFilterBy] = useState<'all' | 'high-growth' | 'high-salary'>('all');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'detailed' | 'progress'>('overview');
+  const [aiEnhancedResults, setAiEnhancedResults] = useState<{
+    insights: string;
+    recommendations: string[];
+    visualizationData: {
+      labels: string[];
+      baseScores: number[];
+      enhancedScores: number[];
+    };
+  } | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 
   useEffect(() => {
     const generateInsights = async () => {
@@ -111,6 +124,24 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
       });
     } catch (error) {
       console.error('Failed to generate PDF report:', error);
+    }
+  };
+
+  const generateAIResults = async () => {
+    if (aiEnhancedResults || aiLoading) return;
+    
+    setAiLoading(true);
+    try {
+      const enhancedResults = await aiService.generateEnhancedResults(
+        numericalScores,
+        assessment.responses
+      );
+      setAiEnhancedResults(enhancedResults);
+    } catch (error) {
+      console.error('Failed to generate enhanced results:', error);
+      // Show error state but don't break the UI
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -495,6 +526,145 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
               </div>
             </div>
           </div>
+
+          {/* Instructional Paragraph */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <p className="text-gray-700 leading-relaxed">
+              <strong>About Your Results:</strong> The above results are calculated using your quantitative responses from Layers 1-5 
+              (Multiple Intelligences, Personality Traits, Aptitudes & Skills, Background & Environment, and Interests & Values). 
+              Layer 6's open-ended responses have been used qualitatively to inform and train the AI for more personalized 
+              guidance in the chat section and enhanced analysis below.
+            </p>
+          </div>
+
+          {/* AI-Enhanced Results Accordion */}
+          <Accordion type="single" collapsible className="mb-8">
+            <AccordionItem value="ai-enhanced" className="border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-purple-50">
+              <AccordionTrigger 
+                onClick={() => {
+                  setIsAccordionOpen(!isAccordionOpen);
+                  if (!isAccordionOpen) {
+                    generateAIResults();
+                  }
+                }}
+                className="text-lg font-semibold text-primary-800 hover:text-primary-900"
+              >
+                🤖 Expand for AI-Enhanced Results (Including Layer 6 Insights)
+              </AccordionTrigger>
+              <AccordionContent>
+                {aiLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary-600 mr-3" />
+                    <span className="text-gray-600">Generating personalized insights...</span>
+                  </div>
+                ) : aiEnhancedResults ? (
+                  <div className="space-y-8">
+                    {/* AI-Generated Insights */}
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <Lightbulb className="w-5 h-5 mr-2 text-primary-600" />
+                        AI-Generated Comprehensive Insights
+                      </h3>
+                      <div className="bg-gradient-to-r from-primary-50 to-purple-50 border border-primary-200 rounded-lg p-6">
+                        <div className="prose prose-blue max-w-none">
+                          {aiEnhancedResults.insights.split('\n\n').map((paragraph, index) => (
+                            <p key={index} className="text-gray-700 mb-4 leading-relaxed">
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Personalized Career Recommendations */}
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <Target className="w-5 h-5 mr-2 text-secondary-600" />
+                        Personalized Career Recommendations
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {aiEnhancedResults.recommendations.map((rec, index) => (
+                          <div key={index} className="bg-gradient-to-r from-secondary-50 to-orange-50 border border-secondary-200 rounded-lg p-4">
+                            <div className="flex items-start">
+                              <div className="bg-gradient-to-r from-secondary-600 to-orange-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">
+                                {index + 1}
+                              </div>
+                              <p className="text-gray-700 leading-relaxed">{rec}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Enhanced Visualization */}
+                    {aiEnhancedResults.visualizationData && (
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                          <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
+                          Enhanced Visualization (Base vs. AI-Adjusted Scores)
+                        </h3>
+                        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+                          <div className="h-96">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RadarChart 
+                                data={aiEnhancedResults.visualizationData.labels.map((label, i) => ({
+                                  label: label.length > 12 ? label.substring(0, 12) + '...' : label,
+                                  fullLabel: label,
+                                  base: aiEnhancedResults.visualizationData.baseScores[i] || 0,
+                                  enhanced: aiEnhancedResults.visualizationData.enhancedScores[i] || 0
+                                }))}
+                                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                              >
+                                <PolarGrid />
+                                <PolarAngleAxis dataKey="label" fontSize={11} />
+                                <PolarRadiusAxis angle={90} domain={[0, 5]} tickCount={6} fontSize={10} />
+                                <Radar
+                                  name="Base Score (Layers 1-5)"
+                                  dataKey="base"
+                                  stroke="#8884d8"
+                                  fill="#8884d8"
+                                  fillOpacity={0.3}
+                                  strokeWidth={2}
+                                />
+                                <Radar
+                                  name="AI-Enhanced Score (+ Layer 6)"
+                                  dataKey="enhanced"
+                                  stroke="#82ca9d"
+                                  fill="#82ca9d"
+                                  fillOpacity={0.4}
+                                  strokeWidth={2}
+                                />
+                                <Tooltip 
+                                  formatter={(value, name, props) => [
+                                    `${Number(value).toFixed(1)}/5.0`, 
+                                    name,
+                                    props.payload.fullLabel
+                                  ]}
+                                />
+                                <Legend />
+                              </RadarChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="mt-4 text-sm text-gray-600 bg-white p-4 rounded-lg border border-purple-200">
+                            <p className="font-medium text-purple-800 mb-2">Chart Explanation:</p>
+                            <p>
+                              The <span className="text-blue-600 font-medium">blue area</span> shows your base scores from Layers 1-5 quantitative responses. 
+                              The <span className="text-green-600 font-medium">green area</span> shows AI-adjusted scores that incorporate your Layer 6 
+                              qualitative insights (goals, fears, preferences) for a more personalized career profile.
+                            </p>
+                          </div>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-600">Click to expand and generate AI-enhanced insights based on all your responses.</p>
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
           {/* Enhanced Chat Sidebar */}
           <div className="lg:col-span-1 space-y-6">

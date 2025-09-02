@@ -475,6 +475,41 @@ User's Assessment Results:
   clearCache(): void {
     this.responseCache.clear();
   }
+
+  async generateEnhancedResults(
+    quantitativeScores: Record<string, number>,
+    allResponses: AssessmentResponse[]
+  ): Promise<{
+    insights: string;
+    recommendations: string[];
+    visualizationData: {
+      labels: string[];
+      baseScores: number[];
+      enhancedScores: number[];
+    };
+  }> {
+    try {
+      // Separate Layer 6 qualitative responses
+      const layer6Responses = allResponses.filter(r => r.layerId === 'layer6');
+      const qualitativeInsights = layer6Responses.map(r => 
+        `${r.questionText}: ${r.response}`
+      ).join('\n');
+
+      // Prepare quantitative data summary
+      const topStrengths = Object.entries(quantitativeScores)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 8)
+        .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
+        .join(', ');
+
+      const messages = [
+        {
+          role: "system",
+          content: "You are a warm, experienced career counselor. Analyze assessment data to provide personalized insights that combine quantitative strengths with qualitative personal context. Be encouraging and specific."
+        },
+        {
+          role: "user",
+          content: `As a career counselor, analyze this user's complete 6-layer assessment:
 }
 
 export const aiService = new AIService();
