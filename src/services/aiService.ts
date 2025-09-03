@@ -54,7 +54,7 @@ const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string
   },
   'layer2': {
     'MBTI': {
-      'l2-mbti-1': 'This question explores your energy source preferences - whether you recharge through solitude (Introversion) or social interaction (Extraversion). Understanding this helps identify work environments where you\\'ll be most productive and satisfied.',
+      'l2-mbti-1': 'This question explores your energy source preferences - whether you recharge through solitude (Introversion) or social interaction (Extraversion). Understanding this helps identify work environments where you\'ll be most productive and satisfied.',
       'l2-mbti-2': 'This assesses your information processing style - focusing on concrete details (Sensing) versus big-picture possibilities (Intuition). This preference influences your approach to problem-solving and career satisfaction.',
       'l2-mbti-3': 'This evaluates your decision-making approach - prioritizing logical analysis (Thinking) versus personal values and impact on people (Feeling). This affects your leadership style and career fit.',
       'l2-mbti-4': 'This measures your lifestyle preferences - structured and planned (Judging) versus flexible and adaptable (Perceiving). This influences your ideal work environment and management style.'
@@ -104,7 +104,7 @@ const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string
   },
   'layer5': {
     'Interests and Passions': {
-      'l5-interest-1': 'This question explores your intrinsic motivation and genuine interests. Having clear passions is crucial for long-term career satisfaction and helps identify fields where you\\'ll find natural engagement and fulfillment.',
+      'l5-interest-1': 'This question explores your intrinsic motivation and genuine interests. Having clear passions is crucial for long-term career satisfaction and helps identify fields where you\'ll find natural engagement and fulfillment.',
       'l5-interest-2': 'This assesses your intellectual curiosity and self-directed learning. Strong curiosity indicates potential for research, innovation, and careers requiring continuous learning and adaptation.',
       'l5-interest-3': 'This evaluates your creative drive and project initiative. High scores suggest entrepreneurial potential and success in creative industries or roles requiring innovation and self-direction.'
     },
@@ -133,7 +133,7 @@ const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string
 const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   'l6-synth-1': [
     'Consider reflecting on moments when you felt most engaged and energized in academic or work settings. What specific activities or types of thinking brought out your best performance and natural enthusiasm?',
-    'Think about the feedback you\\'ve received from teachers, supervisors, or peers about your natural strengths. How do others consistently describe your abilities, and what patterns do you notice in their observations?',
+    'Think about the feedback you\'ve received from teachers, supervisors, or peers about your natural strengths. How do others consistently describe your abilities, and what patterns do you notice in their observations?',
     'Examine your problem-solving approach across different situations. Do you naturally gravitate toward analytical thinking, creative solutions, working with people, or independent research? This reveals your core intelligence strengths.'
   ],
   'l6-synth-2': [
@@ -172,7 +172,7 @@ const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
 async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temperature: number = 0.7) {
   try {
     const { data, error } = await supabase.functions.invoke('groq-ai-service', {
-      body: { 
+      body: {
         messages,
         max_tokens: maxTokens,
         temperature
@@ -197,7 +197,7 @@ async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temp
 
 class AIService {
   private responseCache = new Map<string, any>();
-  
+
   async generateCareerRecommendations(
     scores: Record<string, number>,
     responses: any[],
@@ -207,7 +207,7 @@ class AIService {
     if (this.responseCache.has(cacheKey)) return this.responseCache.get(cacheKey);
 
     const topCategories = Object.entries(scores)
-      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 3).map(([category]) => category);
 
     let insights = `Based on your comprehensive assessment, you demonstrate exceptional strengths in ${topCategories.join(', ')}. `;
@@ -236,7 +236,7 @@ class AIService {
     if (layerExplanations && layerExplanations[categoryId] && layerExplanations[categoryId][question.id]) {
       return layerExplanations[categoryId][question.id];
     }
-    
+
     // Generic fallback based on question content
     const lowerText = question.text.toLowerCase();
     if (lowerText.includes('enjoy') || lowerText.includes('like')) {
@@ -252,14 +252,14 @@ class AIService {
 
   // AI-powered detailed explanation
   async explainQuestionDetailed(
-    question: Question, 
-    layerId: string, 
+    question: Question,
+    layerId: string,
     categoryId: string,
     userResponses?: AssessmentResponse[]
   ): Promise<string> {
     try {
       const contextInfo = userResponses ? this.buildUserContext(userResponses) : '';
-      
+
       const messages = [
         {
           role: "system",
@@ -284,11 +284,11 @@ Explain:
 Keep the explanation encouraging and actionable, around 150-200 words.`
         }
       ];
-      
+
       return await invokeGroqFunction(messages, 300, 0.7);
     } catch (error) {
       console.error('Failed to get detailed AI explanation:', error);
-      return this.getQuestionExplanation(question, layerId, categoryId) + 
+      return this.getQuestionExplanation(question, layerId, categoryId) +
         ' This question helps identify career paths where you can leverage your natural strengths and find long-term satisfaction.';
     }
   }
@@ -303,10 +303,13 @@ Keep the explanation encouraging and actionable, around 150-200 words.`
     try {
       const contextInfo = this.buildUserContext(userResponses || []);
       const strengthsInfo = Object.entries(userScores)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, 5)
         .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
         .join(', ');
+      
+      const qualitativeInsights = userResponses?.filter(r => r.layerId === 'layer6').map(r => r.response).join('; ') || 'Not yet provided';
+
 
       const messages = [
         {
@@ -323,13 +326,13 @@ User Profile:
 - Top Strengths: ${strengthsInfo || 'Not yet determined'}
 - Recommended Careers: ${careers.join(', ') || 'Assessment in progress'}
 - Assessment Progress: ${contextInfo}
+- Previous Reflections: ${qualitativeInsights}
 
 Requirements:
-1. Each suggestion should be 80-120 words
-2. Make each suggestion distinctly different from the others
-3. Base suggestions on the user's demonstrated strengths and interests
-4. Provide specific, actionable examples
-Qualitative Responses (Layer 6): ${qualitativeInsights}
+1. Each suggestion should be 80-120 words.
+2. Make each suggestion distinctly different from the others.
+3. Base suggestions on the user's demonstrated strengths and interests.
+4. Provide specific, actionable examples.
 
 Format your response as JSON:
 {
@@ -342,13 +345,13 @@ Be warm, encouraging, and specific. Focus on actionable insights.`
       ];
 
       const jsonResponse = await invokeGroqFunction(messages, 600, 0.8);
-      
+
       // Extract JSON from response
       const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("No valid JSON found in AI response");
-      
+
       const parsed = JSON.parse(jsonMatch[0]);
-      if (Array.isArray(parsed.suggestions) && parsed.suggestions.length === 3 && typeof parsed.explanation === 'string') {
+      if (Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0 && typeof parsed.explanation === 'string') {
         return parsed;
       }
       throw new Error("Invalid JSON structure in AI response");
@@ -360,7 +363,7 @@ Be warm, encouraging, and specific. Focus on actionable insights.`
 
   private buildUserContext(userResponses: AssessmentResponse[]): string {
     if (userResponses.length === 0) return 'Beginning of assessment';
-    
+
     const responsesByCategory: Record<string, number[]> = {};
     userResponses.forEach(response => {
       if (typeof response.response === 'number') {
@@ -396,7 +399,7 @@ Be warm, encouraging, and specific. Focus on actionable insights.`
   private getFallbackSuggestions(question: Question): AIServiceResponse {
     const suggestions = FALLBACK_SUGGESTIONS[question.id] || [
       'Reflect on your past experiences and identify patterns in what energized and motivated you most. Consider specific situations where you felt engaged and successful.',
-      'Think about the feedback you\\'ve received from others about your natural strengths and abilities. What do people consistently recognize in you, and how might this apply to your career?',
+      'Think about the feedback you\'ve received from others about your natural strengths and abilities. What do people consistently recognize in you, and how might this apply to your career?',
       'Consider your values and what aspects of work or life are most important to you. How can you align your career choices with what matters most to you personally?'
     ];
 
@@ -446,7 +449,7 @@ User's Assessment Results:
 
   private getFallbackChatResponse(message: string, userResults?: { scores: Record<string, number>; careers: string[] }): string {
     const lowerMessage = message.toLowerCase();
-    
+
     if (lowerMessage.includes('career') || lowerMessage.includes('job')) {
       const careers = userResults?.careers || [];
       if (careers.length > 0) {
@@ -454,24 +457,24 @@ User's Assessment Results:
       }
       return 'Career planning is an exciting journey! Your assessment results provide valuable insights into your strengths and preferences. What specific aspects of career planning would you like to explore?';
     }
-    
+
     if (lowerMessage.includes('strength') || lowerMessage.includes('skill')) {
       const topStrengths = userResults?.scores ? Object.entries(userResults.scores)
-        .sort(([,a], [,b]) => (b as number) - (a as number))
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, 3)
         .map(([category]) => category) : [];
-      
+
       if (topStrengths.length > 0) {
         return `Your top strengths appear to be in ${topStrengths.join(', ')}. These are valuable assets that can guide your career decisions. How do you see these strengths applying to your career goals?`;
       }
       return 'Understanding your strengths is crucial for career success. Your assessment has identified several key areas where you excel. What would you like to know about leveraging these strengths?';
     }
-    
+
     if (lowerMessage.includes('help') || lowerMessage.includes('advice')) {
-      return 'I\\'m here to help you navigate your career journey! Whether you want to discuss your assessment results, explore career options, or plan next steps, I\\'m ready to provide guidance. What specific area would you like to focus on?';
+      return 'I\'m here to help you navigate your career journey! Whether you want to discuss your assessment results, explore career options, or plan next steps, I\'m ready to provide guidance. What specific area would you like to focus on?';
     }
-    
-    return 'That\\'s a great question! Your career assessment provides valuable insights that can guide your professional development. Based on your results, you have several promising directions to explore. What aspect would you like to discuss further?';
+
+    return 'That\'s a great question! Your career assessment provides valuable insights that can guide your professional development. Based on your results, you have several promising directions to explore. What aspect would you like to discuss further?';
   }
 
   clearCache(): void {
@@ -493,13 +496,13 @@ User's Assessment Results:
     try {
       // Separate Layer 6 qualitative responses
       const layer6Responses = allResponses.filter(r => r.layerId === 'layer6');
-      const qualitativeInsights = layer6Responses.map(r => 
+      const qualitativeInsights = layer6Responses.map(r =>
         `${r.questionText}: ${r.response}`
       ).join('\n');
 
       // Prepare quantitative data summary
       const topStrengths = Object.entries(quantitativeScores)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 8)
         .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
         .join(', ');
@@ -507,16 +510,38 @@ User's Assessment Results:
       const messages = [
         {
           role: "system",
-          content: "You are a warm, experienced career counselor. Analyze assessment data to provide personalized insights that combine quantitative strengths with qualitative personal context. Be encouraging and specific."
+          content: "You are a warm, experienced career counselor. Analyze assessment data to provide personalized insights that combine quantitative strengths with qualitative personal context. Be encouraging and specific. Respond in a single JSON object."
         },
         {
           role: "user",
-          content: `As a career counselor, analyze this user's complete 6-layer assessment:`
+          content: `As a career counselor, analyze this user's complete 6-layer assessment.
+Quantitative Strengths (Layers 1-5): ${topStrengths}
+Qualitative Insights (Layer 6):
+${qualitativeInsights}
+
+Based on this complete profile, provide a JSON response with the following structure:
+{
+  "insights": "A comprehensive, narrative insight (2-3 paragraphs) that synthesizes the quantitative scores with the qualitative responses. Highlight how the user's personal reflections in Layer 6 add color and context to their scored strengths.",
+  "recommendations": [
+    "A personalized career recommendation that specifically references both a quantitative strength and a qualitative insight.",
+    "A second, different recommendation that does the same.",
+    "A third, actionable recommendation for personal development or career exploration based on the full profile."
+  ],
+  "visualizationData": {
+    "labels": ["...array of top 8 strength categories as strings..."],
+    "baseScores": [...array of the original scores for those 8 categories...],
+    "enhancedScores": [...array of AI-adjusted scores for those 8 categories, slightly increased or decreased (by 0.1 to 0.5) based on the qualitative insights...]
+  }
+}`
         }
       ];
-      // Properly close the content string and the function.
-      const response = await invokeGroqFunction(messages, 800, 0.75);
-      const parsedResponse = JSON.parse(response);
+
+      const response = await invokeGroqFunction(messages, 1000, 0.75);
+      
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No valid JSON found in AI response");
+
+      const parsedResponse = JSON.parse(jsonMatch[0]);
       return parsedResponse;
 
     } catch (error) {
@@ -532,7 +557,7 @@ User's Assessment Results:
         visualizationData: {
           labels: Object.keys(quantitativeScores),
           baseScores: Object.values(quantitativeScores),
-          enhancedScores: Object.values(quantitativeScores).map(score => Math.min(5, score * 1.1)) // Simple enhancement for fallback
+          enhancedScores: Object.values(quantitativeScores).map(score => Math.min(5, score + 0.3)) // Simple enhancement for fallback
         }
       };
     }
