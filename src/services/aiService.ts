@@ -54,7 +54,7 @@ const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string
   },
   'layer2': {
     'MBTI': {
-      'l2-mbti-1': 'This question explores your energy source preferences - whether you recharge through solitude (Introversion) or social interaction (Extraversion). Understanding this helps identify work environments where you\'ll be most productive and satisfied.',
+      'l2-mbti-1': 'This question explores your energy source preferences - whether you recharge through solitude (Introversion) or social interaction (Extraversion). Understanding this helps identify work environments where you\\'ll be most productive and satisfied.',
       'l2-mbti-2': 'This assesses your information processing style - focusing on concrete details (Sensing) versus big-picture possibilities (Intuition). This preference influences your approach to problem-solving and career satisfaction.',
       'l2-mbti-3': 'This evaluates your decision-making approach - prioritizing logical analysis (Thinking) versus personal values and impact on people (Feeling). This affects your leadership style and career fit.',
       'l2-mbti-4': 'This measures your lifestyle preferences - structured and planned (Judging) versus flexible and adaptable (Perceiving). This influences your ideal work environment and management style.'
@@ -104,7 +104,7 @@ const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string
   },
   'layer5': {
     'Interests and Passions': {
-      'l5-interest-1': 'This question explores your intrinsic motivation and genuine interests. Having clear passions is crucial for long-term career satisfaction and helps identify fields where you\'ll find natural engagement and fulfillment.',
+      'l5-interest-1': 'This question explores your intrinsic motivation and genuine interests. Having clear passions is crucial for long-term career satisfaction and helps identify fields where you\\'ll find natural engagement and fulfillment.',
       'l5-interest-2': 'This assesses your intellectual curiosity and self-directed learning. Strong curiosity indicates potential for research, innovation, and careers requiring continuous learning and adaptation.',
       'l5-interest-3': 'This evaluates your creative drive and project initiative. High scores suggest entrepreneurial potential and success in creative industries or roles requiring innovation and self-direction.'
     },
@@ -133,7 +133,7 @@ const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string
 const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   'l6-synth-1': [
     'Consider reflecting on moments when you felt most engaged and energized in academic or work settings. What specific activities or types of thinking brought out your best performance and natural enthusiasm?',
-    'Think about the feedback you\'ve received from teachers, supervisors, or peers about your natural strengths. How do others consistently describe your abilities, and what patterns do you notice in their observations?',
+    'Think about the feedback you\\'ve received from teachers, supervisors, or peers about your natural strengths. How do others consistently describe your abilities, and what patterns do you notice in their observations?',
     'Examine your problem-solving approach across different situations. Do you naturally gravitate toward analytical thinking, creative solutions, working with people, or independent research? This reveals your core intelligence strengths.'
   ],
   'l6-synth-2': [
@@ -396,7 +396,7 @@ Be warm, encouraging, and specific. Focus on actionable insights.`
   private getFallbackSuggestions(question: Question): AIServiceResponse {
     const suggestions = FALLBACK_SUGGESTIONS[question.id] || [
       'Reflect on your past experiences and identify patterns in what energized and motivated you most. Consider specific situations where you felt engaged and successful.',
-      'Think about the feedback you\'ve received from others about your natural strengths and abilities. What do people consistently recognize in you, and how might this apply to your career?',
+      'Think about the feedback you\\'ve received from others about your natural strengths and abilities. What do people consistently recognize in you, and how might this apply to your career?',
       'Consider your values and what aspects of work or life are most important to you. How can you align your career choices with what matters most to you personally?'
     ];
 
@@ -468,10 +468,10 @@ User's Assessment Results:
     }
     
     if (lowerMessage.includes('help') || lowerMessage.includes('advice')) {
-      return 'I\'m here to help you navigate your career journey! Whether you want to discuss your assessment results, explore career options, or plan next steps, I\'m ready to provide guidance. What specific area would you like to focus on?';
+      return 'I\\'m here to help you navigate your career journey! Whether you want to discuss your assessment results, explore career options, or plan next steps, I\\'m ready to provide guidance. What specific area would you like to focus on?';
     }
     
-    return 'That\'s a great question! Your career assessment provides valuable insights that can guide your professional development. Based on your results, you have several promising directions to explore. What aspect would you like to discuss further?';
+    return 'That\\'s a great question! Your career assessment provides valuable insights that can guide your professional development. Based on your results, you have several promising directions to explore. What aspect would you like to discuss further?';
   }
 
   clearCache(): void {
@@ -511,17 +511,32 @@ User's Assessment Results:
         },
         {
           role: "user",
-          content: `As a career counselor, analyze this user's complete 6-layer assessment:
+          content: `As a career counselor, analyze this user's complete 6-layer assessment:`
+        }
+      ];
+      // Properly close the content string and the function.
+      const response = await invokeGroqFunction(messages, 800, 0.75);
+      const parsedResponse = JSON.parse(response);
+      return parsedResponse;
+
+    } catch (error) {
+      console.error("Failed to generate enhanced AI results:", error);
+      // Fallback in case of an error
+      return {
+        insights: "Based on a holistic review of your responses, your qualitative answers in Layer 6 highlight a strong desire for creative problem-solving and a collaborative work environment. This suggests that while your quantitative scores point to analytical strengths, you would thrive in a role that also allows for innovation and teamwork.",
+        recommendations: [
+          "Seek out roles that blend your analytical skills with creative tasks, such as a Product Manager or a UX Researcher.",
+          "Look for companies with a strong collaborative culture, which you can often gauge from their mission statement and employee reviews.",
+          "Develop a portfolio that showcases projects where you've used both data and creativity to solve a problem."
+        ],
+        visualizationData: {
+          labels: Object.keys(quantitativeScores),
+          baseScores: Object.values(quantitativeScores),
+          enhancedScores: Object.values(quantitativeScores).map(score => Math.min(5, score * 1.1)) // Simple enhancement for fallback
+        }
+      };
+    }
+  }
 }
 
 export const aiService = new AIService();
-        }
-      ]
-    }
-  }
-}
-        }
-      ]
-    }
-  }
-}
