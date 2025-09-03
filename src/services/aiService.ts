@@ -132,39 +132,32 @@ const FALLBACK_EXPLANATIONS: Record<string, Record<string, Record<string, string
 // Fallback suggestions for open-ended questions
 const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   'l6-synth-1': [
-    'Consider reflecting on moments when you felt most engaged and energized in academic or work settings. What specific activities or types of thinking brought out your best performance and natural enthusiasm?',
-    'Think about the feedback you\'ve received from teachers, supervisors, or peers about your natural strengths. How do others consistently describe your abilities, and what patterns do you notice in their observations?',
-    'Examine your problem-solving approach across different situations. Do you naturally gravitate toward analytical thinking, creative solutions, working with people, or independent research? This reveals your core intelligence strengths.'
+    'Based on your assessment strengths, consider reflecting on moments when you felt most engaged and energized in academic or work settings. What specific activities or types of thinking brought out your best performance? For example, if you scored high in Logical-Mathematical intelligence, you might find energy in data analysis, problem-solving, or systematic research projects.',
+    'Think about the feedback you\'ve received from teachers, supervisors, or peers about your natural strengths. How do others consistently describe your abilities, and what patterns do you notice? Given your profile, you might hear comments about your analytical thinking, communication skills, or creative problem-solving - use these observations to identify activities that leverage these recognized strengths.'
   ],
   'l6-synth-2': [
-    'Reflect on work or study environments where you felt most productive and comfortable. Consider factors like team size, structure level, pace, and social interaction that contributed to your success.',
-    'Think about your energy patterns throughout different types of activities. Do you thrive in collaborative settings, quiet focused work, dynamic changing environments, or structured predictable routines?',
-    'Consider your communication and decision-making preferences. Do you prefer direct feedback, collaborative consensus, independent authority, or supportive guidance? This reveals your ideal workplace culture.'
+    'Based on your personality and interpersonal scores, reflect on work or study environments where you felt most productive and comfortable. Consider factors like team size, structure level, pace, and social interaction. For example, if you scored high in Interpersonal intelligence, you likely thrive in collaborative, team-oriented environments with regular social interaction.',
+    'Think about your energy patterns and work style preferences revealed in your assessment. Do you thrive in collaborative settings, quiet focused work, or dynamic changing environments? Your scores suggest you would excel in [specific environment type based on their profile] - environments that allow you to leverage your natural strengths while feeling energized and productive.'
   ],
   'l6-synth-3': [
-    'Explore industries that align with your top intelligence strengths and personality preferences. Research specific roles within these industries that match your natural abilities and interests.',
-    'Consider the intersection of your skills, interests, and values. What industries or roles would allow you to use your strengths while pursuing work that feels meaningful and engaging to you?',
-    'Think about emerging fields and evolving roles that might combine multiple areas of your interest. Many exciting careers exist at the intersection of different disciplines and skill sets.'
+    'Based on your top assessment strengths, explore industries that align with your intelligence profile and personality preferences. For example, if you scored highly in Linguistic and Interpersonal areas, consider industries like education, content marketing, public relations, or consulting where communication and people skills are valued.',
+    'Consider the intersection of your demonstrated skills, interests, and aptitudes from your assessment. Look for industries or roles that would allow you to use multiple strengths simultaneously - for instance, if you show both Technical Skills and Visual-Spatial intelligence, explore UX design, product development, or digital marketing roles.'
   ],
   'l6-synth-4': [
-    'Prioritize career areas based on the strength of your natural abilities, level of genuine interest, and alignment with your personal values and lifestyle goals.',
-    'Consider which career paths offer the best combination of growth potential, job satisfaction, and alignment with your assessment results from the previous layers.',
-    'Focus on areas where you can leverage your top strengths while pursuing work that genuinely excites you and aligns with your long-term personal and professional goals.'
+    'Based on your assessment results, prioritize career areas that align with your top strengths. For Career 1, consider your highest-scoring intelligence area. For Career 2, look at roles that combine multiple strengths. For Career 3, explore emerging fields that match your interests. Example: If you scored high in Logical-Mathematical and Technical Skills, consider "Data Science" as Career 1.',
+    'Focus on areas where you can leverage your demonstrated abilities while pursuing work that genuinely excites you. Use your assessment results to guide each choice: Career 1 should be your strongest match, Career 2 could combine multiple interests, and Career 3 might be an aspirational or emerging field that intrigues you based on your profile.'
   ],
   'l6-action-1': [
-    'Schedule informational interviews with professionals in your top career areas. Reach out through LinkedIn, alumni networks, or professional associations to learn about day-to-day realities.',
-    'Research and apply for internships, volunteer opportunities, or part-time roles in your areas of interest. Hands-on experience provides invaluable insights into career fit.',
-    'Attend industry events, webinars, or professional meetups related to your top career choices. Networking and learning about industry trends will inform your career decisions.'
+    'Based on your career interests and strengths, schedule informational interviews with professionals in your top career areas. Reach out through LinkedIn, alumni networks, or professional associations to learn about day-to-day realities. For example, if you\'re interested in data science, connect with data scientists to understand their typical projects and challenges.',
+    'Research and apply for internships, volunteer opportunities, or part-time roles in your areas of interest. Given your assessment profile, look for opportunities that allow you to use your demonstrated strengths. Hands-on experience provides invaluable insights into career fit and helps you build relevant skills.'
   ],
   'l6-action-2': [
-    'Identify specific technical skills, certifications, or knowledge areas that are commonly required in your target career fields. Create a learning plan to address these gaps.',
-    'Assess your soft skills like communication, leadership, or project management. Consider how you can develop these through courses, practice opportunities, or mentorship.',
-    'Evaluate your educational background against your career goals. Determine if additional formal education, online courses, or professional development would strengthen your candidacy.'
+    'Based on your target careers and current skill assessment, identify specific technical skills, certifications, or knowledge areas that are commonly required in your chosen fields. Create a learning plan to address these gaps. For example, if you\'re pursuing data science, you might need to strengthen Python programming or statistical analysis skills.',
+    'Assess your soft skills development needs based on your assessment results. While you may have strong technical or analytical abilities, consider developing complementary skills like communication, leadership, or project management through courses, practice opportunities, or mentorship to become a well-rounded professional.'
   ],
   'l6-action-3': [
-    'Identify professionals in your target fields who could serve as mentors or advisors. Look for people whose career paths or expertise align with your goals.',
-    'Connect with peers who share similar career interests or are pursuing related paths. Peer networks provide mutual support and shared learning opportunities.',
-    'Engage with professional associations, online communities, or alumni networks related to your career interests. These groups offer ongoing support and career resources.'
+    'Based on your career interests and assessment results, identify professionals in your target fields who could serve as mentors or advisors. Look for people whose career paths or expertise align with your goals and demonstrated strengths. For example, if you\'re interested in UX design and scored high in Visual-Spatial intelligence, seek mentors who combine design skills with user research.',
+    'Connect with peers who share similar career interests or are pursuing related paths based on your assessment profile. Join professional associations, online communities, or alumni networks related to your career interests. These groups offer ongoing support, career resources, and networking opportunities that align with your strengths and goals.'
   ]
 };
 
@@ -298,53 +291,60 @@ Keep the explanation encouraging and actionable, around 150-200 words.`
     userScores: Record<string, number> = {},
     careers: string[] = [],
     previousAssessments?: any[],
-    userResponses?: AssessmentResponse[]
+    allUserResponses?: AssessmentResponse[]
   ): Promise<AIServiceResponse> {
     try {
-      const contextInfo = this.buildUserContext(userResponses || []);
+      const contextInfo = this.buildUserContext(allUserResponses || []);
       const strengthsInfo = Object.entries(userScores)
         .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, 5)
         .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
         .join(', ');
       
-      const qualitativeInsights = userResponses?.filter(r => r.layerId === 'layer6').map(r => r.response).join('; ') || 'Not yet provided';
+      const qualitativeInsights = allUserResponses?.filter(r => r.layerId === 'layer6').map(r => r.response).join('; ') || 'Not yet provided';
+      
+      // Build detailed context from Layers 1-5 responses
+      const layer15Context = allUserResponses?.filter(r => r.layerId !== 'layer6').map(r => 
+        `${r.categoryId} - ${r.questionText}: ${r.response}`
+      ).join('\n') || 'No previous responses available';
 
 
       const messages = [
         {
           role: "system",
-          content: "You are an expert career counselor providing personalized suggestions for assessment questions. Generate 3 distinct, specific, and actionable suggestions that are tailored to the user's profile. Each suggestion should be unique and offer a different perspective or approach."
+          content: "You are an expert career counselor providing personalized suggestions for Layer 6 open-ended assessment questions. Generate 2-3 distinct, instructional suggestions that are specifically tailored to the user's Layers 1-5 responses. Each suggestion should explain what to consider, provide guidance, AND include a sample answer or direction based on their profile. Be warm, encouraging, and specific."
         },
         {
           role: "user",
-          content: `Generate 3 unique, personalized suggestions for answering this career assessment question:
+          content: `Generate 2-3 unique, personalized suggestions for answering this Layer 6 open-ended question:
 
 Question: "${question.text}"
 
 User Profile:
 - Top Strengths: ${strengthsInfo || 'Not yet determined'}
+- Detailed Responses: ${layer15Context}
 - Recommended Careers: ${careers.join(', ') || 'Assessment in progress'}
-- Assessment Progress: ${contextInfo}
 - Previous Reflections: ${qualitativeInsights}
 
 Requirements:
-1. Each suggestion should be 80-120 words.
-2. Make each suggestion distinctly different from the others.
-3. Base suggestions on the user's demonstrated strengths and interests.
-4. Provide specific, actionable examples.
+1. Generate 2-3 suggestions (not always 3).
+2. Each suggestion should be 100-150 words.
+3. Each suggestion must EXPLAIN what to consider, INSTRUCT how to approach the question, AND provide a SAMPLE ANSWER or specific direction based on their Layer 1-5 profile.
+4. Make each suggestion distinctly different from the others.
+5. Base suggestions directly on their demonstrated strengths from Layers 1-5.
+6. Be specific and actionable, referencing their actual scores and responses.
 
 Format your response as JSON:
 {
-  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
-  "explanation": "Brief explanation of why these suggestions are tailored to the user"
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3 (optional)"],
+  "explanation": "Brief explanation of how these suggestions connect to their Layer 1-5 profile"
 }
 
-Be warm, encouraging, and specific. Focus on actionable insights.`
+Be warm, encouraging, and specific. Each suggestion should feel personally crafted for this user.`
         }
       ];
 
-      const jsonResponse = await invokeGroqFunction(messages, 600, 0.8);
+      const jsonResponse = await invokeGroqFunction(messages, 800, 0.8);
 
       // Extract JSON from response
       const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
@@ -398,14 +398,13 @@ Be warm, encouraging, and specific. Focus on actionable insights.`
 
   private getFallbackSuggestions(question: Question): AIServiceResponse {
     const suggestions = FALLBACK_SUGGESTIONS[question.id] || [
-      'Reflect on your past experiences and identify patterns in what energized and motivated you most. Consider specific situations where you felt engaged and successful.',
-      'Think about the feedback you\'ve received from others about your natural strengths and abilities. What do people consistently recognize in you, and how might this apply to your career?',
-      'Consider your values and what aspects of work or life are most important to you. How can you align your career choices with what matters most to you personally?'
+      'Reflect on your past experiences and identify patterns in what energized and motivated you most. Consider specific situations where you felt engaged and successful. For example, think about projects or activities where time seemed to fly by because you were so absorbed in the work.',
+      'Think about the feedback you\'ve received from others about your natural strengths and abilities. What do people consistently recognize in you, and how might this apply to your career? Consider both formal feedback and casual observations from friends, family, or colleagues.'
     ];
 
     return {
       suggestions,
-      explanation: 'These suggestions are designed to help you reflect deeply on your experiences and provide meaningful responses.'
+      explanation: 'These suggestions are designed to help you reflect deeply on your experiences and provide meaningful responses based on your assessment profile.'
     };
   }
 

@@ -21,7 +21,7 @@ export interface AssessmentResponse {
   categoryId: string;
   questionId: string;
   questionText: string;
-  response: number | string;
+  response: number | string | string[];
 }
 
 export interface Question {

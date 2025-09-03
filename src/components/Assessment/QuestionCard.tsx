@@ -14,7 +14,7 @@ interface QuestionCardProps {
   userScores?: Record<string, number>;
   careers?: string[];
   previousAssessments?: any[];
-  userResponses?: AssessmentResponse[];
+  allUserResponses?: AssessmentResponse[];
 }
 
 const LIKERT_OPTIONS = [
@@ -34,7 +34,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   userScores = {},
   careers = [],
   previousAssessments = [],
-  userResponses = []
+  allUserResponses = []
 }) => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false);
@@ -46,6 +46,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [suggestionExplanation, setSuggestionExplanation] = useState('');
   const [loadingDetailedExplanation, setLoadingDetailedExplanation] = useState(false);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [careerInputs, setCareerInputs] = useState<string[]>(['', '', '']);
 
   // Reset all states when answer is selected or question changes
   useEffect(() => {
@@ -57,6 +58,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setSuggestions([]);
     setSuggestionExplanation('');
     setSelectedSuggestionIndex(0);
+    
+    // Initialize career inputs for the specific question
+    if (question.id === 'l6-synth-4' && Array.isArray(currentAnswer)) {
+      setCareerInputs(currentAnswer.length >= 3 ? currentAnswer.slice(0, 3) : [...currentAnswer, ...Array(3 - currentAnswer.length).fill('')]);
+    } else if (question.id === 'l6-synth-4') {
+      setCareerInputs(['', '', '']);
+    }
   }, [currentAnswer, question.id]);
 
   const handleGetExplanation = () => {
@@ -85,7 +93,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         question, 
         layerId, 
         categoryId, 
-        userResponses
+        allUserResponses
       );
       setDetailedExplanation(aiExplanation);
       setShowDetailedExplanation(true);
@@ -117,7 +125,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         userScores, 
         careers, 
         previousAssessments,
-        userResponses
+        allUserResponses
       );
       setSuggestions(aiResponse.suggestions);
       setSuggestionExplanation(aiResponse.explanation);
@@ -131,6 +139,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     } finally {
       setLoadingSuggestion(false);
     }
+  };
+
+  const handleCareerInputChange = (index: number, value: string) => {
+    const newInputs = [...careerInputs];
+    newInputs[index] = value;
+    setCareerInputs(newInputs);
+    onAnswer(question.id, newInputs);
   };
 
   return (
@@ -256,6 +271,26 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 {option.label}
               </button>
             ))}
+          </div>
+        ) : question.id === 'l6-synth-4' ? (
+          <div className="space-y-4 mt-6">
+            <p className="text-sm text-gray-600 mb-4">Please list your top 3 career interest areas:</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {careerInputs.map((value, index) => (
+                <div key={index} className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Career {index + 1}
+                  </label>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => handleCareerInputChange(index, e.target.value)}
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
+                    placeholder={`Enter career area ${index + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <textarea

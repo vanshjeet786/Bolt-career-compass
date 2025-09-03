@@ -158,7 +158,7 @@ export const ASSESSMENT_LAYERS: AssessmentLayer[] = [
       ],
       'Action_Plan': [
         createQuestion('l6-action-1', 'What are 3 things you can do in the next 30 days to explore your top choice(s)?', 'open-ended', 'Action_Plan'),
-        createQuestion('l6-action-2', 'What specific skills or knowledge gaps do you need to address?', 'open-ended', 'Action_Plan'),
+        createQuestion('l6-action-2', 'What specific skills or knowledge gaps do you need to address for your target careers?', 'open-ended', 'Action_Plan'),
         createQuestion('l6-action-3', 'Who can help you on this journey? (Mentors, peers, family, online groups)', 'open-ended', 'Action_Plan'),
       ],
     }

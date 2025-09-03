@@ -172,6 +172,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               userScores={scores}
               careers={generateCareerRecommendations(scores)}
               previousAssessments={previousAssessments}
+              allUserResponses={responses}
             />
           </div>
         </div>
