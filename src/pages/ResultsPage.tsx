@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2 } from 'lucide-react';
-import { Assessment, CareerRecommendation, User } from '../types';
+import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -26,13 +26,23 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'detailed' | 'progress'>('overview');
   const [aiEnhancedResults, setAiEnhancedResults] = useState<{
-    insights: string;
-    recommendations: string[];
+    insights: string; // 2-3 paragraphs
+    recommendations: Array<{ // 5-7 recommendations
+      name: string;
+      pros: string[]; // 2-3 bullet points
+      cons: string[]; // 1-2 bullet points
+      nextSteps: string[]; // 2-3 actionable steps
+      layer6Match: string; // 1-2 sentences explaining Layer 6 alignment
+    }>;
     visualizationData: {
       labels: string[];
       baseScores: number[];
       enhancedScores: number[];
     };
+    careerFitData: Array<{ // Bar chart data
+      career: string;
+      fitScore: number; // 0-5 scale
+    }>;
   } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
@@ -599,7 +609,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                     {/* Enhanced Visualization */}
                     {aiEnhancedResults.visualizationData && (
                       <div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center mt-8">
                           <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
                           Enhanced Visualization (Base vs. AI-Adjusted Scores)
                         </h3>
@@ -654,6 +664,99 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                             </p>
                           </div>
                         </Card>
+                      </div>
+                    )}
+
+                    {/* Career Fit Scores Bar Chart */}
+                    {aiEnhancedResults.careerFitData && aiEnhancedResults.careerFitData.length > 0 && (
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center mt-8">
+                          <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+                          Career Fit Scores (AI-Adjusted)
+                        </h3>
+                        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                          <div className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={aiEnhancedResults.careerFitData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis
+                                  dataKey="career"
+                                  angle={-45}
+                                  textAnchor="end"
+                                  height={100}
+                                  interval={0}
+                                  fontSize={12}
+                                />
+                                <YAxis domain={[0, 5]} />
+                                <Tooltip
+                                  formatter={(value, name, props) => [
+                                    `${Number(value).toFixed(1)}/5.0`,
+                                    props.payload.career
+                                  ]}
+                                />
+                                <Bar dataKey="fitScore" fill="url(#careerFitGradient)" radius={[4, 4, 0, 0]} />
+                                <defs>
+                                  <linearGradient id="careerFitGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.8}/>
+                                  </linearGradient>
+                                </defs>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="mt-4 text-sm text-gray-600 bg-white p-4 rounded-lg border border-blue-200">
+                            <p className="font-medium text-blue-800 mb-2">Chart Explanation:</p>
+                            <p>
+                              This chart shows your personalized fit scores for various career paths, adjusted by AI based on your complete assessment profile, including your Layer 6 insights. Higher scores indicate a stronger alignment.
+                            </p>
+                          </div>
+                        </Card>
+                      </div>
+                    )}
+
+                    {/* Personalized Career Recommendations */}
+                    {aiEnhancedResults.recommendations && aiEnhancedResults.recommendations.length > 0 && (
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center mt-8">
+                          <Target className="w-5 h-5 mr-2 text-secondary-600" />
+                          Personalized Career Recommendations
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {aiEnhancedResults.recommendations.map((rec, index) => (
+                            <Card key={index} className="bg-gradient-to-r from-secondary-50 to-orange-50 border-secondary-200">
+                              <h4 className="font-bold text-lg text-gray-800 mb-2">{rec.name}</h4>
+                              <p className="text-sm text-gray-700 mb-3">{rec.layer6Match}</p> {/* How it matches Layer 6 */}
+
+                              <div className="space-y-2 text-sm mb-3">
+                                {rec.pros && rec.pros.length > 0 && (
+                                  <div>
+                                    <p className="font-semibold text-green-700">Pros:</p>
+                                    <ul className="list-disc list-inside text-gray-600">
+                                      {rec.pros.map((item, i) => <li key={i}>{item}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                                {rec.cons && rec.cons.length > 0 && (
+                                  <div>
+                                    <p className="font-semibold text-red-700">Cons:</p>
+                                    <ul className="list-disc list-inside text-gray-600">
+                                      {rec.cons.map((item, i) => <li key={i}>{item}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+
+                              {rec.nextSteps && rec.nextSteps.length > 0 && (
+                                <div>
+                                  <p className="font-semibold text-blue-700 mb-1">Next Steps:</p>
+                                  <ul className="list-disc list-inside text-gray-600">
+                                    {rec.nextSteps.map((step, i) => <li key={i}>{step}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                            </Card>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

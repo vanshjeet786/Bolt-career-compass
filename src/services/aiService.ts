@@ -483,14 +483,24 @@ User's Assessment Results:
   async generateEnhancedResults(
     quantitativeScores: Record<string, number>,
     allResponses: AssessmentResponse[]
-  ): Promise<{
-    insights: string;
-    recommendations: string[];
-    visualizationData: {
-      labels: string[];
-      baseScores: number[];
-      enhancedScores: number[];
+  ): Promise<{ // Updated return type to include careerFitData and more detailed recommendations
+    insights: string; // 2-3 paragraphs
+    recommendations: Array<{ // 5-7 recommendations
+      name: string;
+      pros: string[]; // 2-3 bullet points
+      cons: string[]; // 1-2 bullet points
+      nextSteps: string[]; // 2-3 actionable steps
+      layer6Match: string; // 1-2 sentences explaining Layer 6 alignment
+    }>;
+    visualizationData: { // Radar chart data
+      labels: string[]; // Top 8 strength categories
+      baseScores: number[]; // Original scores
+      enhancedScores: number[]; // AI-adjusted scores (0.1-0.5 adjustment)
     };
+    careerFitData: Array<{ // Bar chart data
+      career: string;
+      fitScore: number; // 0-5 scale
+    }>;
   }> {
     try {
       // Separate Layer 6 qualitative responses
@@ -498,6 +508,12 @@ User's Assessment Results:
       const qualitativeInsights = layer6Responses.map(r =>
         `${r.questionText}: ${r.response}`
       ).join('\n');
+      
+      // Get top 8 categories for visualization
+      const sortedScores = Object.entries(quantitativeScores)
+        .sort(([, a], [, b]) => b - a);
+      const top8Categories = sortedScores.slice(0, 8).map(([category]) => category);
+      const top8BaseScores = sortedScores.slice(0, 8).map(([, score]) => score);
 
       // Prepare quantitative data summary
       const topStrengths = Object.entries(quantitativeScores)
@@ -509,29 +525,35 @@ User's Assessment Results:
       const messages = [
         {
           role: "system",
-          content: "You are a warm, experienced career counselor. Analyze assessment data to provide personalized insights that combine quantitative strengths with qualitative personal context. Be encouraging and specific. Respond in a single JSON object."
+          content: `You are a warm, experienced career counselor. Your task is to analyze a user's complete 6-layer assessment, combining quantitative scores (Layers 1-5) with qualitative personal context (Layer 6). Provide personalized, empowering insights and actionable recommendations. The output must be a single JSON object.
+
+    Instructions for JSON fields:
+    1.  "insights": A comprehensive, narrative insight (2-3 paragraphs) that synthesizes the quantitative scores with the qualitative responses. Highlight how the user's personal reflections in Layer 6 (goals, fears, preferences, self-reflection) add color and context to their scored strengths. Emphasize growth, potential, and actionable self-discovery.
+    2.  "recommendations": An array of 5-7 highly personalized career recommendations. Each recommendation must be an object with the following properties:
+        *   "name": The name of the career (e.g., "Data Scientist").
+        *   "pros": An array of 2-3 bullet points highlighting the benefits of this career for the user, directly linking to their strengths and Layer 6 insights.
+        *   "cons": An array of 1-2 bullet points outlining potential challenges or areas for growth for the user in this career, also linked to their profile.
+        *   "nextSteps": An array of 2-3 actionable steps the user can take to explore this career, tailored to their profile.
+        *   "layer6Match": A concise (1-2 sentences) explanation of how this career specifically aligns with the user's Layer 6 qualitative responses (e.g., "This role aligns with your stated goal of creative problem-solving and your preference for collaborative environments.").
+    3.  "visualizationData": Data for a radar chart comparing base vs. AI-adjusted scores.
+        *   "labels": An array of the top 8 most relevant strength categories (strings).
+        *   "baseScores": An array of the original numerical scores (0-5) for those 8 categories.
+        *   "enhancedScores": An array of AI-adjusted scores (0-5) for those 8 categories. Adjust these scores by 0.1 to 0.5 based on how strongly the Layer 6 qualitative insights reinforce or slightly shift the importance of that category. For example, if a user's Layer 6 responses show a strong passion for nature, slightly boost their 'Naturalistic' score.
+    4.  "careerFitData": Data for a bar chart showing personalized career fit scores.
+        *   "career": The name of the career.
+        *   "fitScore": A numerical score (0-5) representing the user's overall fit for this career, derived from all 6 layers. Include 5-7 careers here, some from the recommendations, some potentially new.
+
+    Ensure the tone is empowering, forward-looking, and directly addresses the user's unique profile.
+    `
         },
         {
           role: "user",
           content: `As a career counselor, analyze this user's complete 6-layer assessment.
 Quantitative Strengths (Layers 1-5): ${topStrengths}
 Qualitative Insights (Layer 6):
-${qualitativeInsights}
+${qualitativeInsights || 'No specific qualitative insights provided yet.'}
 
-Based on this complete profile, provide a JSON response with the following structure:
-{
-  "insights": "A comprehensive, narrative insight (2-3 paragraphs) that synthesizes the quantitative scores with the qualitative responses. Highlight how the user's personal reflections in Layer 6 add color and context to their scored strengths.",
-  "recommendations": [
-    "A personalized career recommendation that specifically references both a quantitative strength and a qualitative insight.",
-    "A second, different recommendation that does the same.",
-    "A third, actionable recommendation for personal development or career exploration based on the full profile."
-  ],
-  "visualizationData": {
-    "labels": ["...array of top 8 strength categories as strings..."],
-    "baseScores": [...array of the original scores for those 8 categories...],
-    "enhancedScores": [...array of AI-adjusted scores for those 8 categories, slightly increased or decreased (by 0.1 to 0.5) based on the qualitative insights...]
-  }
-}`
+Generate the JSON response as per the system instructions.`
         }
       ];
 
@@ -539,6 +561,23 @@ Based on this complete profile, provide a JSON response with the following struc
       
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("No valid JSON found in AI response");
+      
+      const parsedResponse = JSON.parse(jsonMatch[0]);
+      
+      // Ensure visualizationData labels and scores match the top 8 categories
+      // This is a safeguard in case AI doesn't return exactly 8 or misaligns
+      const finalVisualizationData = {
+        labels: parsedResponse.visualizationData?.labels || top8Categories,
+        baseScores: parsedResponse.visualizationData?.baseScores || top8BaseScores,
+        enhancedScores: parsedResponse.visualizationData?.enhancedScores || top8BaseScores.map(score => Math.min(5, score + 0.1)) // Default slight boost
+      };
+
+      return {
+        insights: parsedResponse.insights,
+        recommendations: parsedResponse.recommendations,
+        visualizationData: finalVisualizationData,
+        careerFitData: parsedResponse.careerFitData || []
+      };
 
       const parsedResponse = JSON.parse(jsonMatch[0]);
       return parsedResponse;
@@ -552,7 +591,11 @@ Based on this complete profile, provide a JSON response with the following struc
           "Seek out roles that blend your analytical skills with creative tasks, such as a Product Manager or a UX Researcher.",
           "Look for companies with a strong collaborative culture, which you can often gauge from their mission statement and employee reviews.",
           "Develop a portfolio that showcases projects where you've used both data and creativity to solve a problem."
-        ],
+        ].map(rec => ({
+          name: rec.split(':')[0].trim(), // Simple parsing for fallback
+          pros: [], cons: [], nextSteps: [], layer6Match: rec // Use full string as layer6Match
+        })),
+        careerFitData: [], // No career fit data for fallback
         visualizationData: {
           labels: Object.keys(quantitativeScores),
           baseScores: Object.values(quantitativeScores),
