@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { User, Assessment } from '@/types';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import React, { useState, useEffect } from 'react';
+import { User, Assessment } from '../types';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import { BarChart3, Calendar, TrendingUp, Award, Target, BookOpen, Users, ArrowRight, Plus, Eye, Play, AlertCircle } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -20,7 +20,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   hasInProgressAssessment,
   onStartNewAssessment,
   onResumeAssessment,
-  onViewResults,
+  onViewResults
   loadingAssessments
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
@@ -36,15 +36,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     }
     
     return assessments.filter(assessment => 
-      new Date(assessment.completed_at) >= cutoffDate
+      new Date(assessment.completedAt) >= cutoffDate
     );
   };
 
   const getProgressInsights = () => {
     if (assessments.length < 2) return null;
     
-    const latest = assessments[0]; // newest is at the start
-    const previous = assessments[1];
+    const latest = assessments[assessments.length - 1];
+    const previous = assessments[assessments.length - 2];
     
     const latestScores = latest.scores as Record<string, number>;
     const previousScores = previous.scores as Record<string, number>;
@@ -67,7 +67,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const getTopStrengths = () => {
     if (assessments.length === 0) return [];
     
-    const latestAssessment = assessments[0];
+    const latestAssessment = assessments[assessments.length - 1];
     const scores = latestAssessment.scores as Record<string, number>;
     
     return Object.entries(scores)
@@ -185,7 +185,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <Target className="w-6 h-6 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-pink-600">
-              {assessments.length > 0 ? assessments[0].recommendedCareers.length : 0}
+              {assessments.length > 0 ? assessments[assessments.length - 1].recommendedCareers.length : 0}
             </h3>
             <p className="text-gray-600">Career Matches</p>
           </Card>
@@ -218,7 +218,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </div>
               ) : filteredAssessments.length > 0 ? (
                 <div className="space-y-4">
-                  {filteredAssessments.slice(0, 5).map((assessment) => (
+                  {filteredAssessments.slice(-5).reverse().map((assessment, index) => (
                     <div
                       key={assessment.id}
                       className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-primary-50 rounded-lg hover:shadow-md transition-shadow"
@@ -229,7 +229,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-800">
-                            Assessment #{assessments.length - assessments.indexOf(assessment)}
+                            Assessment #{filteredAssessments.length - index}
                           </h3>
                           <p className="text-sm text-gray-600">
                             Completed on {new Date(assessment.completed_at).toLocaleDateString()}
@@ -292,7 +292,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <p className="text-gray-600">Total Assessments</p>
                       {assessments.length > 0 && (
                         <p className="text-sm text-gray-500 mt-2">
-                          Last: {new Date(assessments[0].completed_at).toLocaleDateString()}
+                          Last: {new Date(assessments[assessments.length - 1].completedAt).toLocaleDateString()}
                         </p>
                       )}
                     </div>
@@ -347,7 +347,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     variant="outline"
                     className="w-full justify-start"
                     icon={Eye}
-                    onClick={() => onViewResults(assessments[0])}
+                    onClick={() => onViewResults(assessments[assessments.length - 1])}
                   >
                     View Latest Results
                   </Button>
@@ -395,4 +395,3 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     </div>
   );
 };
-
