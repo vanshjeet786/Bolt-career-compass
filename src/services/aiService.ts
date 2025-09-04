@@ -579,9 +579,6 @@ Generate the JSON response as per the system instructions.`
         careerFitData: parsedResponse.careerFitData || []
       };
 
-      const parsedResponse = JSON.parse(jsonMatch[0]);
-      return parsedResponse;
-
     } catch (error) {
       console.error("Failed to generate enhanced AI results:", error);
       // Fallback in case of an error
