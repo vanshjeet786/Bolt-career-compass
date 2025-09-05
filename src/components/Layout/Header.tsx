@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brain, User, LogOut, FileDown, UserCircle } from 'lucide-react';
+import { Brain, User, LogOut, FileDown } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { User as UserType } from '../../types';
 
@@ -10,7 +10,6 @@ interface HeaderProps {
   onDownloadReport?: () => void;
   showDownload?: boolean;
   onDashboard?: () => void;
-  onProfileClick?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
@@ -19,8 +18,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout, 
   onDownloadReport,
   showDownload = false,
-  onDashboard,
-  onProfileClick
+  onDashboard
 }) => {
   return (
     <header className="bg-white shadow-lg border-b-2 border-blue-100">
@@ -63,17 +61,6 @@ export const Header: React.FC<HeaderProps> = ({
             
             {user ? (
               <div className="flex items-center space-x-3">
-                {onProfileClick && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={UserCircle}
-                    onClick={onProfileClick}
-                    className="text-primary-600 hover:text-primary-800"
-                  >
-                    Profile
-                  </Button>
-                )}
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-primary-100 to-purple-100 rounded-full flex items-center justify-center">
                     <User className="w-4 h-4 text-primary-600" />

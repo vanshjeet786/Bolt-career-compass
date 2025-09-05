@@ -6,11 +6,9 @@ import { LandingPage } from './pages/LandingPage';
 import { AssessmentPage } from './pages/AssessmentPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { ProfilePage } from './pages/ProfilePage';
 import { User, Assessment } from './types';
-import { assessmentService } from './services/assessmentService';
 
-type AppState = 'landing' | 'dashboard' | 'assessment' | 'results' | 'profile';
+type AppState = 'landing' | 'dashboard' | 'assessment' | 'results';
 
 function App() {
   const [currentState, setCurrentState] = useState<AppState>('landing');
@@ -18,22 +16,18 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [userAssessments, setUserAssessments] = useState<Assessment[]>([]);
-  const [hasInProgressAssessment, setHasInProgressAssessment] = useState(false);
-  const [loadingAssessments, setLoadingAssessments] = useState(false);
 
   const handleGetStarted = () => {
     if (user) {
-      setCurrentState('dashboard');
+      setCurrentState('assessment');
     } else {
       setShowAuthModal(true);
     }
   };
 
-  const handleAuth = async (authenticatedUser: User) => {
+  const handleAuth = (authenticatedUser: User) => {
     setUser(authenticatedUser);
     setShowAuthModal(false);
-    await loadUserAssessments(authenticatedUser.id);
-    checkForInProgressAssessment(authenticatedUser.id);
     setCurrentState('dashboard');
   };
 
@@ -43,37 +37,16 @@ function App() {
         await supabase.auth.signOut();
         setUser(null);
         setCurrentAssessment(null);
-        setUserAssessments([]);
-        setHasInProgressAssessment(false);
         setCurrentState('landing');
       } catch (error) {
         console.error('Logout error:', error);
         // Still clear local state even if logout fails
         setUser(null);
         setCurrentAssessment(null);
-        setUserAssessments([]);
-        setHasInProgressAssessment(false);
         setCurrentState('landing');
       }
     };
     logout();
-  };
-
-  const loadUserAssessments = async (userId: string) => {
-    setLoadingAssessments(true);
-    try {
-      const assessments = await assessmentService.getUserAssessments(userId);
-      setUserAssessments(assessments);
-    } catch (error) {
-      console.error('Failed to load user assessments:', error);
-    } finally {
-      setLoadingAssessments(false);
-    }
-  };
-
-  const checkForInProgressAssessment = (userId: string) => {
-    const savedData = localStorage.getItem(`inProgressAssessment_${userId}`);
-    setHasInProgressAssessment(!!savedData);
   };
 
   // Check for existing session on app load
@@ -89,8 +62,6 @@ function App() {
           assessments: []
         };
         setUser(user);
-        await loadUserAssessments(user.id);
-        checkForInProgressAssessment(user.id);
       }
     };
 
@@ -109,13 +80,10 @@ function App() {
           };
           setUser(user);
           setCurrentState('dashboard');
-          await loadUserAssessments(user.id);
-          checkForInProgressAssessment(user.id);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setCurrentAssessment(null);
           setUserAssessments([]);
-          setHasInProgressAssessment(false);
           setCurrentState('landing');
         }
       }
@@ -124,40 +92,13 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleAssessmentComplete = async (assessment: Assessment) => {
-    try {
-      // Save to database
-      const savedAssessment = await assessmentService.saveAssessment(
-        user!.id,
-        assessment.responses,
-        assessment.scores,
-        assessment.recommendedCareers
-      );
-      
-      setCurrentAssessment(savedAssessment);
-      setUserAssessments(prev => [savedAssessment, ...prev]);
-      setHasInProgressAssessment(false);
-      setCurrentState('results');
-    } catch (error) {
-      console.error('Failed to save assessment:', error);
-      // Still show results even if save fails
-      setCurrentAssessment(assessment);
-      setUserAssessments(prev => [assessment, ...prev]);
-      setCurrentState('results');
-    }
+  const handleAssessmentComplete = (assessment: Assessment) => {
+    setCurrentAssessment(assessment);
+    setUserAssessments(prev => [...prev, assessment]);
+    setCurrentState('results');
   };
 
   const handleStartNewAssessment = () => {
-    // Clear any existing in-progress assessment
-    if (user) {
-      localStorage.removeItem(`inProgressAssessment_${user.id}`);
-      setHasInProgressAssessment(false);
-    }
-    setCurrentAssessment(assessment);
-    setCurrentState('assessment');
-  };
-
-  const handleResumeAssessment = () => {
     setCurrentState('assessment');
   };
 
@@ -168,10 +109,6 @@ function App() {
 
   const handleBackToDashboard = () => {
     setCurrentState('dashboard');
-  };
-
-  const handleProfileClick = () => {
-    setCurrentState('profile');
   };
 
   const handleDownloadReport = () => {
@@ -190,7 +127,6 @@ function App() {
         onDownloadReport={currentState === 'results' ? handleDownloadReport : undefined}
         showDownload={currentState === 'results'}
         onDashboard={user && currentState !== 'dashboard' ? handleBackToDashboard : undefined}
-        onProfileClick={user ? handleProfileClick : undefined}
       />
 
       <main>
@@ -202,11 +138,8 @@ function App() {
           <DashboardPage
             user={user}
             assessments={userAssessments}
-            hasInProgressAssessment={hasInProgressAssessment}
             onStartNewAssessment={handleStartNewAssessment}
-            onResumeAssessment={handleResumeAssessment}
             onViewResults={handleViewResults}
-            loadingAssessments={loadingAssessments}
           />
         )}
 
@@ -215,15 +148,6 @@ function App() {
             user={user}
             onComplete={handleAssessmentComplete}
             previousAssessments={userAssessments}
-          />
-        )}
-
-        {currentState === 'profile' && user && (
-          <ProfilePage
-            user={user}
-            assessments={userAssessments}
-            onViewResults={handleViewResults}
-            onStartNewAssessment={handleStartNewAssessment}
           />
         )}
 

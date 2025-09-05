@@ -112,18 +112,11 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
       const finalScores = calculateScores(responses);
       const recommendedCareers = generateCareerRecommendations(finalScores);
       
-      // Convert responses to database format
-      const dbResponses = responses.map(response => ({
-        layer_number: ASSESSMENT_LAYERS.findIndex(layer => layer.id === response.layerId) + 1,
-        question_id: response.questionId,
-        response: response.response
-      }));
-      
       const assessment: Assessment = {
         id: Date.now().toString(),
-        user_id: user.id,
-        completed_at: new Date(),
-        responses: dbResponses,
+        userId: user.id,
+        completedAt: new Date(),
+        responses,
         scores: finalScores,
         recommendedCareers,
         mlPrediction: recommendedCareers[0] // Simple prediction for demo

@@ -8,8 +8,8 @@ export interface User {
 
 export interface Assessment {
   id: string;
-  user_id: string;
-  completed_at: Date;
+  userId: string;
+  completedAt: Date;
   responses: AssessmentResponse[];
   scores: Record<string, number | string>;
   recommendedCareers: string[];
@@ -17,8 +17,10 @@ export interface Assessment {
 }
 
 export interface AssessmentResponse {
-  layer_number: number;
-  question_id: string;
+  layerId: string;
+  categoryId: string;
+  questionId: string;
+  questionText: string;
   response: number | string | string[];
 }
 
