@@ -66,3 +66,5 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       setCareerInputs(['', '', '']);
     }
   }, [currentAnswer, question.id]);
+
+}
