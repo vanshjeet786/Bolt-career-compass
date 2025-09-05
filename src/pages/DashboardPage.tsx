@@ -20,7 +20,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   hasInProgressAssessment,
   onStartNewAssessment,
   onResumeAssessment,
-  onViewResults,
+  onViewResults
   loadingAssessments
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
