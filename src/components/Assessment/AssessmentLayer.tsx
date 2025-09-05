@@ -50,8 +50,10 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
     if (!question) return;
     
     const response: AssessmentResponse = {
-      layer_number: parseInt(layer.id.replace('layer', '')),
-      question_id: questionId,
+      layerId: layer.id,
+      categoryId: question.category,
+      questionId,
+      questionText: question.text,
       response: answer
     };
     

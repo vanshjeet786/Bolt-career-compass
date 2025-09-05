@@ -2,26 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { User, Assessment } from '../types';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { BarChart3, Calendar, TrendingUp, Award, Target, BookOpen, Users, ArrowRight, Plus, Eye, Play, AlertCircle } from 'lucide-react';
+import { BarChart3, Calendar, TrendingUp, Award, Target, BookOpen, Users, ArrowRight, Plus, Eye } from 'lucide-react';
 
 interface DashboardPageProps {
   user: User;
   assessments: Assessment[];
-  hasInProgressAssessment: boolean;
   onStartNewAssessment: () => void;
-  onResumeAssessment: () => void;
   onViewResults: (assessment: Assessment) => void;
-  loadingAssessments: boolean;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   user,
   assessments,
-  hasInProgressAssessment,
   onStartNewAssessment,
-  onResumeAssessment,
-  onViewResults,
-  loadingAssessments
+  onViewResults
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
 
@@ -94,63 +88,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </h1>
               <p className="text-xl text-gray-600">Track your career development journey</p>
             </div>
-            <div className="flex gap-3">
-              {hasInProgressAssessment && (
-                <Button
-                  icon={Play}
-                  onClick={onResumeAssessment}
-                  size="lg"
-                  variant="secondary"
-                  className="hover:scale-105 transition-transform duration-200"
-                >
-                  Continue Where You Left
-                </Button>
-              )}
-              <Button
-                icon={Plus}
-                onClick={onStartNewAssessment}
-                size="lg"
-                className="hover:scale-105 transition-transform duration-200"
-              >
-                Take New Assessment
-              </Button>
-            </div>
+            <Button
+              icon={Plus}
+              onClick={onStartNewAssessment}
+              size="lg"
+              className="hover:scale-105 transition-transform duration-200"
+            >
+              Take New Assessment
+            </Button>
           </div>
         </div>
-
-        {/* In-Progress Assessment Alert */}
-        {hasInProgressAssessment && (
-          <Card className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
-            <div className="flex items-center">
-              <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3 rounded-full mr-4">
-                <AlertCircle className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-amber-800 mb-1">Assessment In Progress</h3>
-                <p className="text-amber-700">You have an unfinished assessment. Continue where you left off or start a new one.</p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={Play}
-                  onClick={onResumeAssessment}
-                  className="border-amber-300 text-amber-700 hover:bg-amber-100"
-                >
-                  Continue
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onStartNewAssessment}
-                  className="text-amber-600 hover:text-amber-800"
-                >
-                  Start New
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -211,12 +158,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </select>
               </div>
 
-              {loadingAssessments ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading your assessments...</p>
-                </div>
-              ) : filteredAssessments.length > 0 ? (
+              {filteredAssessments.length > 0 ? (
                 <div className="space-y-4">
                   {filteredAssessments.slice(-5).reverse().map((assessment, index) => (
                     <div
@@ -232,7 +174,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             Assessment #{filteredAssessments.length - index}
                           </h3>
                           <p className="text-sm text-gray-600">
-                            Completed on {new Date(assessment.completed_at).toLocaleDateString()}
+                            Completed on {new Date(assessment.completedAt).toLocaleDateString()}
                           </p>
                           <p className="text-xs text-primary-600">
                             {assessment.recommendedCareers.length} career matches found
