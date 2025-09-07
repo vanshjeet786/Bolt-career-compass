@@ -419,7 +419,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                               <p className="text-2xl font-bold text-primary-600">{progressAnalysis.totalAssessments}</p>
                               <p className="text-gray-600">Total Assessments Completed</p>
                               <p className="text-sm text-gray-500 mt-2">
-                                Last assessment: {new Date(previousAssessments[previousAssessments.length - 1]?.completedAt || Date.now()).toLocaleDateString()}
+                                Last assessment: {new Date(previousAssessments[previousAssessments.length - 1]?.completed_at || Date.now()).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
