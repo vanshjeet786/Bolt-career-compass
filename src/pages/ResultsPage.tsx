@@ -16,10 +16,9 @@ interface ResultsPageProps {
   assessment: Assessment;
   user: User;
   previousAssessments?: Assessment[];
-  onFinish: () => void;
 }
 
-export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, previousAssessments = [], onFinish }) => {
+export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, previousAssessments = [] }) => {
   const [aiInsights, setAiInsights] = useState<string>('');
   const [showChat, setShowChat] = useState(false);
   const [sortBy, setSortBy] = useState<'match' | 'salary' | 'name'>('match');
@@ -47,7 +46,47 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
-  const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
+
+  // Save assessment to Supabase on component mount
+  useEffect(() => {
+    const saveAssessment = async () => {
+      try {
+        // Save to assessments table
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from('assessments')
+          .insert({
+            user_id: user.id,
+            current_layer: 6,
+            status: 'completed',
+            completed_at: assessment.completedAt.toISOString()
+          })
+          .select()
+          .single();
+
+        if (assessmentError) throw assessmentError;
+
+        // Save responses
+        const responsesToSave = assessment.responses.map(response => ({
+          assessment_id: assessmentData.id,
+          layer_number: parseInt(response.layerId.replace('layer', '')),
+          question_id: response.questionId,
+          response_value: response.response
+        }));
+
+        const { error: responsesError } = await supabase
+          .from('assessment_responses')
+          .insert(responsesToSave);
+
+        if (responsesError) throw responsesError;
+
+        console.log('Assessment saved successfully');
+      } catch (error) {
+        console.error('Failed to save assessment:', error);
+      }
+    };
+
+    saveAssessment();
+  }, [assessment, user.id]);
 
   useEffect(() => {
     const generateInsights = async () => {
@@ -236,9 +275,6 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
               size="lg"
             >
               {showChat ? 'Hide Chat' : 'Chat with AI Counselor'}
-            </Button>
-            <Button onClick={onFinish} size="lg">
-              Finish
             </Button>
           </div>
         </div>
@@ -581,25 +617,13 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                         AI-Generated Comprehensive Insights
                       </h3>
                       <div className="bg-gradient-to-r from-primary-50 to-purple-50 border border-primary-200 rounded-lg p-6">
-                        <div
-                          className={`prose prose-blue max-w-none relative transition-all duration-300 ${isInsightsExpanded ? 'max-h-full' : 'max-h-24 overflow-hidden'}`}
-                        >
+                        <div className="prose prose-blue max-w-none">
                           {aiEnhancedResults.insights.split('\n\n').map((paragraph, index) => (
                             <p key={index} className="text-gray-700 mb-4 leading-relaxed">
                               {paragraph}
                             </p>
                           ))}
-                          {!isInsightsExpanded && (
-                            <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-primary-50 to-transparent" />
-                          )}
                         </div>
-                        <Button
-                          variant="link"
-                          onClick={() => setIsInsightsExpanded(!isInsightsExpanded)}
-                          className="text-primary-600 hover:text-primary-700 mt-2"
-                        >
-                          {isInsightsExpanded ? 'Show Less' : 'Show More...'}
-                        </Button>
                       </div>
                     </div>
 
