@@ -483,21 +483,21 @@ User's Assessment Results:
   async generateEnhancedResults(
     quantitativeScores: Record<string, number>,
     allResponses: AssessmentResponse[]
-  ): Promise<{ // Updated return type to include careerFitData and more detailed recommendations
+  ): Promise<{
     insights: string; // 2-3 paragraphs
-    recommendations: Array<{ // 5-7 recommendations
+    recommendations: Array<{
       name: string;
       pros: string[]; // 2-3 bullet points
       cons: string[]; // 1-2 bullet points
       nextSteps: string[]; // 2-3 actionable steps
       layer6Match: string; // 1-2 sentences explaining Layer 6 alignment
     }>;
-    visualizationData: { // Radar chart data
+    visualizationData: {
       labels: string[]; // Top 8 strength categories
       baseScores: number[]; // Original scores
       enhancedScores: number[]; // AI-adjusted scores (0.1-0.5 adjustment)
     };
-    careerFitData: Array<{ // Bar chart data
+    careerFitData: Array<{
       career: string;
       fitScore: number; // 0-5 scale
     }>;
@@ -525,26 +525,15 @@ User's Assessment Results:
       const messages = [
         {
           role: "system",
-          content: `You are a warm, experienced career counselor. Your task is to analyze a user's complete 6-layer assessment, combining quantitative scores (Layers 1-5) with qualitative personal context (Layer 6). Provide personalized, empowering insights and actionable recommendations. The output must be a single JSON object.
+          content: `You are a warm, experienced career counselor. Your task is to analyze a user's complete 6-layer assessment, combining quantitative scores (Layers 1-5) with qualitative personal context (Layer 6). Provide personalized, empowering insights and actionable recommendations. The output MUST be valid JSON.
 
-    Instructions for JSON fields:
-    1.  "insights": A comprehensive, narrative insight (2-3 paragraphs) that synthesizes the quantitative scores with the qualitative responses. Highlight how the user's personal reflections in Layer 6 (goals, fears, preferences, self-reflection) add color and context to their scored strengths. Emphasize growth, potential, and actionable self-discovery.
-    2.  "recommendations": An array of 5-7 highly personalized career recommendations. Each recommendation must be an object with the following properties:
-        *   "name": The name of the career (e.g., "Data Scientist").
-        *   "pros": An array of 2-3 bullet points highlighting the benefits of this career for the user, directly linking to their strengths and Layer 6 insights.
-        *   "cons": An array of 1-2 bullet points outlining potential challenges or areas for growth for the user in this career, also linked to their profile.
-        *   "nextSteps": An array of 2-3 actionable steps the user can take to explore this career, tailored to their profile.
-        *   "layer6Match": A concise (1-2 sentences) explanation of how this career specifically aligns with the user's Layer 6 qualitative responses (e.g., "This role aligns with your stated goal of creative problem-solving and your preference for collaborative environments.").
-    3.  "visualizationData": Data for a radar chart comparing base vs. AI-adjusted scores.
-        *   "labels": An array of the top 8 most relevant strength categories (strings).
-        *   "baseScores": An array of the original numerical scores (0-5) for those 8 categories.
-        *   "enhancedScores": An array of AI-adjusted scores (0-5) for those 8 categories. Adjust these scores by 0.1 to 0.5 based on how strongly the Layer 6 qualitative insights reinforce or slightly shift the importance of that category. For example, if a user's Layer 6 responses show a strong passion for nature, slightly boost their 'Naturalistic' score.
-    4.  "careerFitData": Data for a bar chart showing personalized career fit scores.
-        *   "career": The name of the career.
-        *   "fitScore": A numerical score (0-5) representing the user's overall fit for this career, derived from all 6 layers. Include 5-7 careers here, some from the recommendations, some potentially new.
+Instructions for JSON fields:
+1. "insights": A comprehensive, narrative insight (2-3 paragraphs) that synthesizes the quantitative scores with the qualitative responses.
+2. "recommendations": An array of 5-7 career recommendations. Each must have: "name", "pros" (array), "cons" (array), "nextSteps" (array), "layer6Match" (string).
+3. "visualizationData": Object with "labels" (array), "baseScores" (array), "enhancedScores" (array).
+4. "careerFitData": Array of objects with "career" (string) and "fitScore" (number 0-5).
 
-    Ensure the tone is empowering, forward-looking, and directly addresses the user's unique profile.
-    `
+Ensure the output is valid JSON only. No additional text.`
         },
         {
           role: "user",
@@ -557,12 +546,18 @@ Generate the JSON response as per the system instructions.`
         }
       ];
 
-      const response = await invokeGroqFunction(messages, 1000, 0.75);
+      const response = await invokeGroqFunction(messages, 1200, 0.75);
       
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (!jsonMatch) throw new Error("No valid JSON found in AI response");
       
-      const parsedResponse = JSON.parse(jsonMatch[0]);
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(jsonMatch[0]);
+      } catch (parseError) {
+        console.error("JSON parsing failed:", parseError);
+        throw new Error("Invalid JSON structure in AI response");
+      }
       
       // Ensure visualizationData labels and scores match the top 8 categories
       // This is a safeguard in case AI doesn't return exactly 8 or misaligns
@@ -585,13 +580,21 @@ Generate the JSON response as per the system instructions.`
       return {
         insights: "Based on a holistic review of your responses, your qualitative answers in Layer 6 highlight a strong desire for creative problem-solving and a collaborative work environment. This suggests that while your quantitative scores point to analytical strengths, you would thrive in a role that also allows for innovation and teamwork.",
         recommendations: [
-          "Seek out roles that blend your analytical skills with creative tasks, such as a Product Manager or a UX Researcher.",
-          "Look for companies with a strong collaborative culture, which you can often gauge from their mission statement and employee reviews.",
-          "Develop a portfolio that showcases projects where you've used both data and creativity to solve a problem."
-        ].map(rec => ({
-          name: rec.split(':')[0].trim(), // Simple parsing for fallback
-          pros: [], cons: [], nextSteps: [], layer6Match: rec // Use full string as layer6Match
-        })),
+          {
+            name: "Product Manager",
+            pros: ["Blend analytical and creative skills", "Work with diverse teams"],
+            cons: ["High responsibility", "Fast-paced environment"],
+            nextSteps: ["Research PM roles", "Build a portfolio"],
+            layer6Match: "Aligns with your desire for creative problem-solving and collaboration."
+          },
+          {
+            name: "UX Researcher",
+            pros: ["User-focused work", "Data-driven insights"],
+            cons: ["Requires specialized training"],
+            nextSteps: ["Learn UX research methods", "Practice user interviews"],
+            layer6Match: "Matches your analytical strengths with human-centered approach."
+          }
+        ],
         careerFitData: [], // No career fit data for fallback
         visualizationData: {
           labels: Object.keys(quantitativeScores),

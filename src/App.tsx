@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './services/supabaseClient';
 import { Header } from './components/Layout/Header';
 import { AuthModal } from './components/Auth/AuthModal';
+import { ProfileModal } from './components/Profile/ProfileModal';
 import { LandingPage } from './pages/LandingPage';
 import { AssessmentPage } from './pages/AssessmentPage';
 import { ResultsPage } from './pages/ResultsPage';
@@ -14,8 +15,46 @@ function App() {
   const [currentState, setCurrentState] = useState<AppState>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [userAssessments, setUserAssessments] = useState<Assessment[]>([]);
+
+  // Load user assessments from Supabase
+  const loadUserAssessments = async (userId: string) => {
+    try {
+      const { data: assessments, error } = await supabase
+        .from('assessments')
+        .select(`
+          *,
+          assessment_responses (*)
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .order('completed_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedAssessments: Assessment[] = assessments.map(assessment => ({
+        id: assessment.id,
+        userId: assessment.user_id,
+        completedAt: new Date(assessment.completed_at),
+        responses: assessment.assessment_responses.map((response: any) => ({
+          layerId: `layer${response.layer_number}`,
+          categoryId: 'unknown', // We'll need to derive this from question_id
+          questionId: response.question_id,
+          questionText: 'Question text', // We'll need to look this up
+          response: response.response_value
+        })),
+        scores: {}, // We'll calculate this from responses
+        recommendedCareers: [], // We'll derive this from scores
+        mlPrediction: 'Data Science' // Default prediction
+      }));
+
+      setUserAssessments(formattedAssessments);
+    } catch (error) {
+      console.error('Failed to load user assessments:', error);
+    }
+  };
 
   const handleGetStarted = () => {
     if (user) {
@@ -28,6 +67,7 @@ function App() {
   const handleAuth = (authenticatedUser: User) => {
     setUser(authenticatedUser);
     setShowAuthModal(false);
+    loadUserAssessments(authenticatedUser.id);
     setCurrentState('dashboard');
   };
 
@@ -62,6 +102,7 @@ function App() {
           assessments: []
         };
         setUser(user);
+        loadUserAssessments(user.id);
       }
     };
 
@@ -79,6 +120,7 @@ function App() {
             assessments: []
           };
           setUser(user);
+          loadUserAssessments(user.id);
           setCurrentState('dashboard');
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -123,6 +165,7 @@ function App() {
       <Header
         user={user}
         onAuthClick={() => setShowAuthModal(true)}
+        onProfileClick={() => setShowProfileModal(true)}
         onLogout={handleLogout}
         onDownloadReport={currentState === 'results' ? handleDownloadReport : undefined}
         showDownload={currentState === 'results'}
@@ -164,6 +207,15 @@ function App() {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onAuth={handleAuth}
+      />
+
+      <ProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+        assessments={userAssessments}
+        onViewResults={handleViewResults}
+        onLogout={handleLogout}
       />
     </div>
   );

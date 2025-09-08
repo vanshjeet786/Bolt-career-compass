@@ -10,7 +10,7 @@ import { CareerCard } from '../components/Results/CareerCard';
 import { AIChat } from '../components/Results/AIChat';
 import { pdfService } from '../services/pdfService';
 import { aiService } from '../services/aiService';
-import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface ResultsPageProps {
   assessment: Assessment;
@@ -46,6 +46,47 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   } | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+
+  // Save assessment to Supabase on component mount
+  useEffect(() => {
+    const saveAssessment = async () => {
+      try {
+        // Save to assessments table
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from('assessments')
+          .insert({
+            user_id: user.id,
+            current_layer: 6,
+            status: 'completed',
+            completed_at: assessment.completedAt.toISOString()
+          })
+          .select()
+          .single();
+
+        if (assessmentError) throw assessmentError;
+
+        // Save responses
+        const responsesToSave = assessment.responses.map(response => ({
+          assessment_id: assessmentData.id,
+          layer_number: parseInt(response.layerId.replace('layer', '')),
+          question_id: response.questionId,
+          response_value: response.response
+        }));
+
+        const { error: responsesError } = await supabase
+          .from('assessment_responses')
+          .insert(responsesToSave);
+
+        if (responsesError) throw responsesError;
+
+        console.log('Assessment saved successfully');
+      } catch (error) {
+        console.error('Failed to save assessment:', error);
+      }
+    };
+
+    saveAssessment();
+  }, [assessment, user.id]);
 
   useEffect(() => {
     const generateInsights = async () => {
@@ -587,24 +628,6 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                     </div>
 
                     {/* Personalized Career Recommendations */}
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <Target className="w-5 h-5 mr-2 text-secondary-600" />
-                        Personalized Career Recommendations
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {aiEnhancedResults.recommendations.map((rec, index) => (
-                          <div key={index} className="bg-gradient-to-r from-secondary-50 to-orange-50 border border-secondary-200 rounded-lg p-4">
-                            <div className="flex items-start">
-                              <div className="bg-gradient-to-r from-secondary-600 to-orange-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">
-                                {index + 1}
-                              </div>
-                              <p className="text-gray-700 leading-relaxed">{rec}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
 
                     {/* Enhanced Visualization */}
                     {aiEnhancedResults.visualizationData && (
@@ -677,7 +700,10 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
                           <div className="h-80">
                             <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={aiEnhancedResults.careerFitData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                              <BarChart 
+                                data={aiEnhancedResults.careerFitData} 
+                                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                              >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis
                                   dataKey="career"

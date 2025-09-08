@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Assessment } from '../types';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { supabase } from '../services/supabaseClient';
 import { BarChart3, Calendar, TrendingUp, Award, Target, BookOpen, Users, ArrowRight, Plus, Eye } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -18,9 +19,37 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onViewResults
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
+  const [loadedAssessments, setLoadedAssessments] = useState<Assessment[]>([]);
+
+  // Load assessments from Supabase on component mount
+  useEffect(() => {
+    const loadAssessments = async () => {
+      try {
+        const { data: assessments, error } = await supabase
+          .from('assessments')
+          .select(`
+            *,
+            assessment_responses (*)
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .order('completed_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Use the assessments from props if available, otherwise use loaded ones
+        setLoadedAssessments(assessments || []);
+      } catch (error) {
+        console.error('Failed to load assessments:', error);
+      }
+    };
+
+    loadAssessments();
+  }, [user.id]);
 
   const getFilteredAssessments = () => {
-    if (selectedTimeframe === 'all') return assessments;
+    const allAssessments = assessments.length > 0 ? assessments : loadedAssessments;
+    if (selectedTimeframe === 'all') return allAssessments;
     
     const cutoffDate = new Date();
     if (selectedTimeframe === '6months') {
@@ -29,7 +58,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
     }
     
-    return assessments.filter(assessment => 
+    return allAssessments.filter(assessment => 
       new Date(assessment.completedAt) >= cutoffDate
     );
   };
@@ -59,9 +88,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   const getTopStrengths = () => {
-    if (assessments.length === 0) return [];
+    const allAssessments = assessments.length > 0 ? assessments : loadedAssessments;
+    if (allAssessments.length === 0) return [];
     
-    const latestAssessment = assessments[assessments.length - 1];
+    const latestAssessment = allAssessments[allAssessments.length - 1];
     const scores = latestAssessment.scores as Record<string, number>;
     
     return Object.entries(scores)
@@ -71,6 +101,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   const filteredAssessments = getFilteredAssessments();
+  const allAssessments = assessments.length > 0 ? assessments : loadedAssessments;
   const progressInsights = getProgressInsights();
   const topStrengths = getTopStrengths();
 
@@ -105,7 +136,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-600 to-blue-600 rounded-full mb-4">
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-primary-600">{assessments.length}</h3>
+            <h3 className="text-2xl font-bold text-primary-600">{allAssessments.length}</h3>
             <p className="text-gray-600">Assessments Completed</p>
           </Card>
 
@@ -132,7 +163,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <Target className="w-6 h-6 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-pink-600">
-              {assessments.length > 0 ? assessments[assessments.length - 1].recommendedCareers.length : 0}
+              {allAssessments.length > 0 ? allAssessments[allAssessments.length - 1].recommendedCareers.length : 0}
             </h3>
             <p className="text-gray-600">Career Matches</p>
           </Card>
@@ -284,12 +315,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 >
                   Take New Assessment
                 </Button>
-                {assessments.length > 0 && (
+                {allAssessments.length > 0 && (
                   <Button
                     variant="outline"
                     className="w-full justify-start"
                     icon={Eye}
-                    onClick={() => onViewResults(assessments[assessments.length - 1])}
+                    onClick={() => onViewResults(allAssessments[allAssessments.length - 1])}
                   >
                     View Latest Results
                   </Button>
@@ -311,7 +342,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 Recommended Next Steps
               </h3>
               <div className="space-y-3 text-sm">
-                {assessments.length === 0 ? (
+                {allAssessments.length === 0 ? (
                   <p className="text-gray-600">Complete your first assessment to get personalized recommendations.</p>
                 ) : (
                   <>

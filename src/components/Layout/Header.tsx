@@ -6,6 +6,7 @@ import { User as UserType } from '../../types';
 interface HeaderProps {
   user: UserType | null;
   onAuthClick: () => void;
+  onProfileClick?: () => void;
   onLogout: () => void;
   onDownloadReport?: () => void;
   showDownload?: boolean;
@@ -15,6 +16,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ 
   user, 
   onAuthClick, 
+  onProfileClick,
   onLogout, 
   onDownloadReport,
   showDownload = false,
@@ -62,9 +64,13 @@ export const Header: React.FC<HeaderProps> = ({
             {user ? (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-primary-100 to-purple-100 rounded-full flex items-center justify-center">
+                  <button
+                    onClick={onProfileClick}
+                    className="w-8 h-8 bg-gradient-to-r from-primary-100 to-purple-100 rounded-full flex items-center justify-center hover:from-primary-200 hover:to-purple-200 transition-colors"
+                    title="View Profile"
+                  >
                     <User className="w-4 h-4 text-primary-600" />
-                  </div>
+                  </button>
                   <span className="font-medium text-gray-700">{user.name}</span>
                 </div>
                 <Button
