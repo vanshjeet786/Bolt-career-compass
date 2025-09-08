@@ -20,13 +20,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
   const [loadedAssessments, setLoadedAssessments] = useState<Assessment[]>([]);
-  const [hasInProgress, setHasInProgress] = useState(false);
 
+  // Load assessments from Supabase on component mount
   useEffect(() => {
-    // Check for in-progress assessment
-    const inProgressData = localStorage.getItem(`inProgressAssessment_${user.id}`);
-    setHasInProgress(!!inProgressData);
-
     const loadAssessments = async () => {
       try {
         const { data: assessments, error } = await supabase
@@ -123,26 +119,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </h1>
               <p className="text-xl text-gray-600">Track your career development journey</p>
             </div>
-            <div className="flex items-center gap-4">
-              {hasInProgress && (
-                <Button
-                  onClick={onStartNewAssessment}
-                  size="lg"
-                  variant="outline"
-                  className="hover:scale-105 transition-transform duration-200 animate-pulse"
-                >
-                  Continue Your Assessment
-                </Button>
-              )}
-              <Button
-                icon={Plus}
-                onClick={onStartNewAssessment}
-                size="lg"
-                className="hover:scale-105 transition-transform duration-200"
-              >
-                Take New Assessment
-              </Button>
-            </div>
+            <Button
+              icon={Plus}
+              onClick={onStartNewAssessment}
+              size="lg"
+              className="hover:scale-105 transition-transform duration-200"
+            >
+              Take New Assessment
+            </Button>
           </div>
         </div>
 
