@@ -7,9 +7,18 @@ import { LandingPage } from './pages/LandingPage';
 import { AssessmentPage } from './pages/AssessmentPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { User, Assessment } from './types';
+import { User, Assessment, AssessmentResponse } from './types';
+import { calculateScores, generateCareerRecommendations } from './services/assessmentService';
 
 type AppState = 'landing' | 'dashboard' | 'assessment' | 'results';
+
+interface SupabaseResponse {
+  layer_number: number;
+  category_id: string;
+  question_id: string;
+  question_text: string;
+  response_value: number | string | string[];
+}
 
 function App() {
   const [currentState, setCurrentState] = useState<AppState>('landing');
@@ -22,11 +31,23 @@ function App() {
   // Load user assessments from Supabase
   const loadUserAssessments = async (userId: string) => {
     try {
-      const { data: assessments, error } = await supabase
+      const { data: assessmentsData, error } = await supabase
         .from('assessments')
         .select(`
-          *,
-          assessment_responses (*)
+          id,
+          user_id,
+          completed_at,
+          scores,
+          recommended_careers,
+          ml_prediction,
+          assessment_responses (
+            assessment_id,
+            question_id,
+            question_text,
+            response_value,
+            category_id,
+            layer_number
+          )
         `)
         .eq('user_id', userId)
         .eq('status', 'completed')
@@ -34,25 +55,85 @@ function App() {
 
       if (error) throw error;
 
-      const formattedAssessments: Assessment[] = assessments.map(assessment => ({
-        id: assessment.id,
-        userId: assessment.user_id,
-        completedAt: new Date(assessment.completed_at),
-        responses: assessment.assessment_responses.map((response: any) => ({
-          layerId: `layer${response.layer_number}`,
-          categoryId: 'unknown', // We'll need to derive this from question_id
-          questionId: response.question_id,
-          questionText: 'Question text', // We'll need to look this up
-          response: response.response_value
-        })),
-        scores: {}, // We'll calculate this from responses
-        recommendedCareers: [], // We'll derive this from scores
-        mlPrediction: 'Data Science' // Default prediction
-      }));
+      const formattedAssessments: Assessment[] = assessmentsData.map(assessment => {
+        const responses: AssessmentResponse[] = assessment.assessment_responses.map((r: SupabaseResponse) => ({
+          layerId: `layer${r.layer_number}`,
+          categoryId: r.category_id,
+          questionId: r.question_id,
+          questionText: r.question_text,
+          response: r.response_value,
+        }));
+
+        // Recalculate scores and recommendations to ensure data integrity,
+        // but prefer the stored values if they exist.
+        const scores = (assessment.scores && Object.keys(assessment.scores).length > 0)
+          ? assessment.scores
+          : calculateScores(responses);
+
+        const recommendedCareers = (assessment.recommended_careers && assessment.recommended_careers.length > 0)
+          ? assessment.recommended_careers
+          : generateCareerRecommendations(scores);
+
+        return {
+          id: assessment.id,
+          userId: assessment.user_id,
+          completedAt: new Date(assessment.completed_at),
+          responses,
+          scores,
+          recommendedCareers,
+          mlPrediction: assessment.ml_prediction || recommendedCareers[0],
+        };
+      });
 
       setUserAssessments(formattedAssessments);
     } catch (error) {
       console.error('Failed to load user assessments:', error);
+    }
+  };
+
+  const saveAssessment = async (assessment: Assessment, userId: string) => {
+    try {
+      // 1. Save the main assessment record
+      const { data: assessmentRecord, error: assessmentError } = await supabase
+        .from('assessments')
+        .insert({
+          user_id: userId,
+          completed_at: assessment.completedAt.toISOString(),
+          scores: assessment.scores,
+          recommended_careers: assessment.recommendedCareers,
+          ml_prediction: assessment.mlPrediction,
+          status: 'completed'
+        })
+        .select('id')
+        .single();
+
+      if (assessmentError) throw assessmentError;
+      if (!assessmentRecord) throw new Error("Failed to create assessment record.");
+
+      const assessmentId = assessmentRecord.id;
+
+      // 2. Prepare and save all the assessment responses
+      const responsesToInsert = assessment.responses.map(response => ({
+        assessment_id: assessmentId,
+        question_id: response.questionId,
+        question_text: response.questionText,
+        response_value: response.response,
+        category_id: response.categoryId,
+        layer_number: parseInt(response.layerId.replace('layer', ''), 10)
+      }));
+
+      const { error: responsesError } = await supabase
+        .from('assessment_responses')
+        .insert(responsesToInsert);
+
+      if (responsesError) throw responsesError;
+
+      console.log('Assessment saved successfully!');
+      return { success: true };
+
+    } catch (error) {
+      console.error('Error saving assessment:', error);
+      return { success: false, error };
     }
   };
 
@@ -134,9 +215,20 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleAssessmentComplete = (assessment: Assessment) => {
+  const handleAssessmentComplete = async (assessment: Assessment) => {
     setCurrentAssessment(assessment);
-    setUserAssessments(prev => [...prev, assessment]);
+
+    if (user) {
+      const { success } = await saveAssessment(assessment, user.id);
+      if (success) {
+        // Reload assessments from the database to ensure consistency
+        await loadUserAssessments(user.id);
+      }
+    } else {
+      // If there's no user, just update local state for the session
+      setUserAssessments(prev => [...prev, assessment]);
+    }
+
     setCurrentState('results');
   };
 
