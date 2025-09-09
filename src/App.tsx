@@ -235,6 +235,7 @@ function App() {
   };
 
   const handleStartNewAssessment = () => {
+    setCurrentAssessment(null);
     setCurrentState('assessment');
   };
 
@@ -293,6 +294,7 @@ function App() {
             assessment={currentAssessment}
             user={user}
             previousAssessments={userAssessments.slice(0, -1)}
+            onFinish={handleBackToDashboard}
           />
         )}
       </main>
