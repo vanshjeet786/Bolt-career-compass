@@ -548,14 +548,12 @@ Generate the JSON response as per the system instructions.`
 
       const response = await invokeGroqFunction(messages, 1200, 0.75);
       
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No valid JSON found in AI response");
-      
       let parsedResponse;
       try {
-        parsedResponse = JSON.parse(jsonMatch[0]);
+        parsedResponse = JSON.parse(response);
       } catch (parseError) {
         console.error("JSON parsing failed:", parseError);
+        console.error("Malformed AI Response:", response); // Log the problematic response
         throw new Error("Invalid JSON structure in AI response");
       }
       
