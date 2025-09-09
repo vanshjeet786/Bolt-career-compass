@@ -124,13 +124,17 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
   const isOpen = openItems.has(value);
 
   return (
-    <div 
-      className={`overflow-hidden transition-all duration-300 ${
-        isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-      }`}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateRows: isOpen ? '1fr' : '0fr',
+        transition: 'grid-template-rows 0.3s ease-out',
+      }}
     >
-      <div className={`p-6 bg-white border-t border-gray-200 ${className}`}>
-        {children}
+      <div className={`overflow-hidden ${className}`}>
+        <div className="p-6 bg-white border-t border-gray-200">
+          {children}
+        </div>
       </div>
     </div>
   );
