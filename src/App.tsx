@@ -44,7 +44,9 @@ function App() {
             assessment_id,
             question_id,
             question_text,
+            question_text,
             response_value,
+            category_id,
             category_id,
             layer_number
           )
@@ -56,7 +58,7 @@ function App() {
       if (error) throw error;
 
       const formattedAssessments: Assessment[] = assessmentsData.map(assessment => {
-        const responses: AssessmentResponse[] = assessment.assessment_responses.map((r: SupabaseResponse) => ({
+        const responses: AssessmentResponse[] = assessment.assessment_responses.map((r: any) => ({
           layerId: `layer${r.layer_number}`,
           categoryId: r.category_id,
           questionId: r.question_id,

@@ -10,6 +10,7 @@ import { CareerCard } from '../components/Results/CareerCard';
 import { AIChat } from '../components/Results/AIChat';
 import { pdfService } from '../services/pdfService';
 import { aiService } from '../services/aiService';
+import { supabase } from '../services/supabaseClient';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface ResultsPageProps {
@@ -51,26 +52,29 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   useEffect(() => {
     const saveAssessment = async () => {
       try {
-        // Save to assessments table
         const { data: assessmentData, error: assessmentError } = await supabase
           .from('assessments')
           .insert({
             user_id: user.id,
             current_layer: 6,
             status: 'completed',
-            completed_at: assessment.completedAt.toISOString()
+            completed_at: assessment.completedAt.toISOString(),
+            scores: assessment.scores,
+            recommended_careers: assessment.recommendedCareers,
+            ml_prediction: assessment.mlPrediction
           })
           .select()
           .single();
 
         if (assessmentError) throw assessmentError;
 
-        // Save responses
         const responsesToSave = assessment.responses.map(response => ({
           assessment_id: assessmentData.id,
           layer_number: parseInt(response.layerId.replace('layer', '')),
           question_id: response.questionId,
-          response_value: response.response
+          question_text: response.questionText,
+          response_value: response.response,
+          category_id: response.categoryId
         }));
 
         const { error: responsesError } = await supabase
@@ -109,7 +113,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   }, [assessment, previousAssessments]);
 
   const generateCareerRecommendations = (): CareerRecommendation[] => {
-    return assessment.recommendedCareers.map(career => {
+    // Show 5-6+ career options instead of limiting to 3
+    const allCareers = assessment.recommendedCareers.slice(0, 8).map(career => {
       const details = CAREER_DETAILS[career];
       if (details) {
         return {
@@ -130,6 +135,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
         growthOpportunities: ['Senior positions', 'Management roles']
       };
     }).sort((a, b) => b.match - a.match);
+    
+    return allCareers;
   };
 
   const filteredAndSortedCareers = () => {
@@ -589,8 +596,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           </div>
 
           {/* AI-Enhanced Results Accordion */}
-          <Accordion type="single" collapsible className="mb-8">
-            <AccordionItem value="ai-enhanced" className="border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-purple-50">
+          <div className="mb-8">
+            <div className="border-2 border-primary-200 bg-gradient-to-r from-primary-50 to-purple-50 rounded-xl overflow-hidden shadow-lg">
               <AccordionTrigger 
                 onClick={() => {
                   setIsAccordionOpen(!isAccordionOpen);
@@ -598,28 +605,61 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                     generateAIResults();
                   }
                 }}
-                className="text-lg font-semibold text-primary-800 hover:text-primary-900"
+                className="w-full flex items-center justify-between p-6 text-left bg-gradient-to-r from-primary-50 to-purple-50 hover:from-primary-100 hover:to-purple-100 transition-all duration-200 text-lg font-semibold text-primary-800 hover:text-primary-900 border-none"
               >
-                🤖 Expand for AI-Enhanced Results (Including Layer 6 Insights)
+                <span className="flex items-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                    <Lightbulb className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold">AI-Enhanced Career Analysis</div>
+                    <div className="text-sm text-primary-600 font-normal">Comprehensive insights powered by your Layer 6 responses</div>
+                  </div>
+                </span>
+                <div className={`transform transition-transform duration-200 ${isAccordionOpen ? 'rotate-180' : ''}`}>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </AccordionTrigger>
-              <AccordionContent>
+              
+              {isAccordionOpen && (
+                <div className="bg-white border-t border-primary-200">
                 {aiLoading ? (
-                  <div className="flex justify-center items-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary-600 mr-3" />
-                    <span className="text-gray-600">Generating personalized insights...</span>
+                  <div className="flex flex-col justify-center items-center py-16 px-6">
+                    <div className="relative">
+                      <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Lightbulb className="w-6 h-6 text-primary-600" />
+                      </div>
+                    </div>
+                    <div className="mt-6 text-center">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Analyzing Your Complete Profile</h3>
+                      <p className="text-gray-600">Our AI is processing your responses to generate personalized career insights...</p>
+                      <div className="mt-4 flex justify-center space-x-1">
+                        <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
                   </div>
                 ) : aiEnhancedResults ? (
-                  <div className="space-y-8">
+                  <div className="p-8 space-y-10">
                     {/* AI-Generated Insights */}
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <Lightbulb className="w-5 h-5 mr-2 text-primary-600" />
-                        AI-Generated Comprehensive Insights
-                      </h3>
-                      <div className="bg-gradient-to-r from-primary-50 to-purple-50 border border-primary-200 rounded-lg p-6">
+                    <div className="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-2xl p-8 border border-purple-200 shadow-lg">
+                      <div className="flex items-center mb-6">
+                        <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-4">
+                          <Lightbulb className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-gray-800">Comprehensive AI Analysis</h3>
+                          <p className="text-purple-600 font-medium">Based on your complete assessment profile</p>
+                        </div>
+                      </div>
+                      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/50">
                         <div className="prose prose-blue max-w-none">
                           {aiEnhancedResults.insights.split('\n\n').map((paragraph, index) => (
-                            <p key={index} className="text-gray-700 mb-4 leading-relaxed">
+                            <p key={index} className="text-gray-800 mb-4 leading-relaxed text-lg">
                               {paragraph}
                             </p>
                           ))}
@@ -631,13 +671,18 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
 
                     {/* Enhanced Visualization */}
                     {aiEnhancedResults.visualizationData && (
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center mt-8">
-                          <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
-                          Enhanced Visualization (Base vs. AI-Adjusted Scores)
-                        </h3>
-                        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
-                          <div className="h-96">
+                      <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 rounded-2xl p-8 border border-blue-200 shadow-lg">
+                        <div className="flex items-center mb-6">
+                          <div className="w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mr-4">
+                            <BarChart3 className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bold text-gray-800">Enhanced Score Analysis</h3>
+                            <p className="text-blue-600 font-medium">Base scores vs. AI-adjusted with Layer 6 insights</p>
+                          </div>
+                        </div>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/50">
+                          <div className="h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <RadarChart 
                                 data={aiEnhancedResults.visualizationData.labels.map((label, i) => ({
@@ -646,26 +691,26 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                                   base: aiEnhancedResults.visualizationData.baseScores[i] || 0,
                                   enhanced: aiEnhancedResults.visualizationData.enhancedScores[i] || 0
                                 }))}
-                                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                                margin={{ top: 40, right: 60, left: 60, bottom: 40 }}
                               >
-                                <PolarGrid />
-                                <PolarAngleAxis dataKey="label" fontSize={11} />
-                                <PolarRadiusAxis angle={90} domain={[0, 5]} tickCount={6} fontSize={10} />
+                                <PolarGrid stroke="#e0e7ff" />
+                                <PolarAngleAxis dataKey="label" fontSize={12} fontWeight="500" />
+                                <PolarRadiusAxis angle={90} domain={[0, 5]} tickCount={6} fontSize={11} />
                                 <Radar
                                   name="Base Score (Layers 1-5)"
                                   dataKey="base"
-                                  stroke="#8884d8"
-                                  fill="#8884d8"
-                                  fillOpacity={0.3}
-                                  strokeWidth={2}
+                                  stroke="#6366f1"
+                                  fill="#6366f1"
+                                  fillOpacity={0.2}
+                                  strokeWidth={3}
                                 />
                                 <Radar
                                   name="AI-Enhanced Score (+ Layer 6)"
                                   dataKey="enhanced"
-                                  stroke="#82ca9d"
-                                  fill="#82ca9d"
-                                  fillOpacity={0.4}
-                                  strokeWidth={2}
+                                  stroke="#10b981"
+                                  fill="#10b981"
+                                  fillOpacity={0.3}
+                                  strokeWidth={3}
                                 />
                                 <Tooltip 
                                   formatter={(value, name, props) => [
@@ -673,127 +718,225 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                                     name,
                                     props.payload.fullLabel
                                   ]}
+                                  contentStyle={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                    border: '1px solid #e5e7eb',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                                  }}
                                 />
-                                <Legend />
+                                <Legend 
+                                  wrapperStyle={{
+                                    paddingTop: '20px',
+                                    fontSize: '14px',
+                                    fontWeight: '500'
+                                  }}
+                                />
                               </RadarChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="mt-4 text-sm text-gray-600 bg-white p-4 rounded-lg border border-purple-200">
-                            <p className="font-medium text-purple-800 mb-2">Chart Explanation:</p>
+                          <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+                            <p className="font-semibold text-blue-900 mb-2 flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                              Understanding Your Enhanced Scores
+                            </p>
                             <p>
-                              The <span className="text-blue-600 font-medium">blue area</span> shows your base scores from Layers 1-5 quantitative responses. 
-                              The <span className="text-green-600 font-medium">green area</span> shows AI-adjusted scores that incorporate your Layer 6 
-                              qualitative insights (goals, fears, preferences) for a more personalized career profile.
+                              The <span className="text-indigo-600 font-semibold">indigo area</span> represents your quantitative assessment scores (Layers 1-5). 
+                              The <span className="text-emerald-600 font-semibold">green area</span> shows AI-enhanced scores that integrate your personal reflections 
+                              and goals from Layer 6, providing a more holistic view of your career potential.
                             </p>
                           </div>
-                        </Card>
+                        </div>
                       </div>
                     )}
 
                     {/* Career Fit Scores Bar Chart */}
                     {aiEnhancedResults.careerFitData && aiEnhancedResults.careerFitData.length > 0 && (
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center mt-8">
-                          <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
-                          Career Fit Scores (AI-Adjusted)
-                        </h3>
-                        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-                          <div className="h-80">
+                      <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-2xl p-8 border border-emerald-200 shadow-lg">
+                        <div className="flex items-center mb-6">
+                          <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mr-4">
+                            <Target className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bold text-gray-800">Career Compatibility Matrix</h3>
+                            <p className="text-emerald-600 font-medium">AI-calculated fit scores for your top career matches</p>
+                          </div>
+                        </div>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/50">
+                          <div className="h-[350px]">
                             <ResponsiveContainer width="100%" height="100%">
                               <BarChart 
                                 data={aiEnhancedResults.careerFitData} 
-                                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                                margin={{ top: 30, right: 40, left: 30, bottom: 80 }}
                               >
-                                <CartesianGrid strokeDasharray="3 3" />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e0f2fe" />
                                 <XAxis
                                   dataKey="career"
                                   angle={-45}
                                   textAnchor="end"
-                                  height={100}
+                                  height={120}
                                   interval={0}
-                                  fontSize={12}
+                                  fontSize={13}
+                                  fontWeight="500"
                                 />
-                                <YAxis domain={[0, 5]} />
+                                <YAxis 
+                                  domain={[0, 5]} 
+                                  fontSize={12}
+                                  fontWeight="500"
+                                />
                                 <Tooltip
                                   formatter={(value, name, props) => [
                                     `${Number(value).toFixed(1)}/5.0`,
                                     props.payload.career
                                   ]}
+                                  contentStyle={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                    border: '1px solid #e5e7eb',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+                                  }}
                                 />
-                                <Bar dataKey="fitScore" fill="url(#careerFitGradient)" radius={[4, 4, 0, 0]} />
+                                <Bar 
+                                  dataKey="fitScore" 
+                                  fill="url(#careerFitGradient)" 
+                                  radius={[6, 6, 0, 0]}
+                                  stroke="#059669"
+                                  strokeWidth={1}
+                                />
                                 <defs>
                                   <linearGradient id="careerFitGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.8}/>
+                                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
+                                    <stop offset="100%" stopColor="#059669" stopOpacity={0.8}/>
                                   </linearGradient>
                                 </defs>
                               </BarChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="mt-4 text-sm text-gray-600 bg-white p-4 rounded-lg border border-blue-200">
-                            <p className="font-medium text-blue-800 mb-2">Chart Explanation:</p>
+                          <div className="mt-6 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
+                            <p className="font-semibold text-emerald-900 mb-2 flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              Career Compatibility Insights
+                            </p>
                             <p>
-                              This chart shows your personalized fit scores for various career paths, adjusted by AI based on your complete assessment profile, including your Layer 6 insights. Higher scores indicate a stronger alignment.
+                              These scores represent your compatibility with different career paths, calculated using advanced AI analysis of your complete profile. 
+                              Higher scores indicate stronger alignment with your skills, personality, and personal aspirations.
                             </p>
                           </div>
-                        </Card>
+                        </div>
                       </div>
                     )}
 
                     {/* Personalized Career Recommendations */}
                     {aiEnhancedResults.recommendations && aiEnhancedResults.recommendations.length > 0 && (
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center mt-8">
-                          <Target className="w-5 h-5 mr-2 text-secondary-600" />
-                          Personalized Career Recommendations
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 rounded-2xl p-8 border border-amber-200 shadow-lg">
+                        <div className="flex items-center mb-8">
+                          <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center mr-4">
+                            <Award className="w-6 h-6 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bold text-gray-800">Personalized Career Roadmap</h3>
+                            <p className="text-amber-600 font-medium">Tailored recommendations based on your complete profile</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                           {aiEnhancedResults.recommendations.map((rec, index) => (
-                            <Card key={index} className="bg-gradient-to-r from-secondary-50 to-orange-50 border-secondary-200">
-                              <h4 className="font-bold text-lg text-gray-800 mb-2">{rec.name}</h4>
-                              <p className="text-sm text-gray-700 mb-3">{rec.layer6Match}</p> {/* How it matches Layer 6 */}
+                            <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/50 shadow-lg hover:shadow-xl transition-all duration-300">
+                              <div className="flex items-center mb-4">
+                                <div className="w-8 h-8 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center mr-3">
+                                  <span className="text-white font-bold text-sm">{index + 1}</span>
+                                </div>
+                                <h4 className="font-bold text-xl text-gray-800">{rec.name}</h4>
+                              </div>
+                              
+                              <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg mb-4 border border-amber-200">
+                                <p className="text-sm font-medium text-amber-800 mb-1">Personal Alignment</p>
+                                <p className="text-amber-700">{rec.layer6Match}</p>
+                              </div>
 
-                              <div className="space-y-2 text-sm mb-3">
+                              <div className="space-y-4 mb-4">
                                 {rec.pros && rec.pros.length > 0 && (
                                   <div>
-                                    <p className="font-semibold text-green-700">Pros:</p>
-                                    <ul className="list-disc list-inside text-gray-600">
-                                      {rec.pros.map((item, i) => <li key={i}>{item}</li>)}
+                                    <p className="font-semibold text-emerald-700 flex items-center mb-2">
+                                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
+                                      Advantages
+                                    </p>
+                                    <ul className="space-y-1">
+                                      {rec.pros.map((item, i) => (
+                                        <li key={i} className="flex items-start text-gray-700">
+                                          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                          {item}
+                                        </li>
+                                      ))}
                                     </ul>
                                   </div>
                                 )}
                                 {rec.cons && rec.cons.length > 0 && (
                                   <div>
-                                    <p className="font-semibold text-red-700">Cons:</p>
-                                    <ul className="list-disc list-inside text-gray-600">
-                                      {rec.cons.map((item, i) => <li key={i}>{item}</li>)}
+                                    <p className="font-semibold text-red-700 flex items-center mb-2">
+                                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-2-9a1 1 0 000 2v4a1 1 0 102 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
+                                      </svg>
+                                      Considerations
+                                    </p>
+                                    <ul className="space-y-1">
+                                      {rec.cons.map((item, i) => (
+                                        <li key={i} className="flex items-start text-gray-700">
+                                          <span className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                                          {item}
+                                        </li>
+                                      ))}
                                     </ul>
                                   </div>
                                 )}
                               </div>
 
                               {rec.nextSteps && rec.nextSteps.length > 0 && (
-                                <div>
-                                  <p className="font-semibold text-blue-700 mb-1">Next Steps:</p>
-                                  <ul className="list-disc list-inside text-gray-600">
-                                    {rec.nextSteps.map((step, i) => <li key={i}>{step}</li>)}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                                  <p className="font-semibold text-blue-800 mb-3 flex items-center">
+                                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                    </svg>
+                                    Action Plan
+                                  </p>
+                                  <ul className="space-y-2">
+                                    {rec.nextSteps.map((step, i) => (
+                                      <li key={i} className="flex items-start text-blue-800">
+                                        <span className="bg-blue-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center mt-0.5 mr-3 flex-shrink-0">
+                                          {i + 1}
+                                        </span>
+                                        {step}
+                                      </li>
+                                    ))}
                                   </ul>
                                 </div>
                               )}
-                            </Card>
+                            </div>
                           ))}
                         </div>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600">Click to expand and generate AI-enhanced insights based on all your responses.</p>
+                  <div className="text-center py-16 px-6">
+                    <div className="w-20 h-20 bg-gradient-to-r from-primary-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Lightbulb className="w-10 h-10 text-primary-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-800 mb-3">Ready for Deep Insights?</h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Click the button above to generate comprehensive AI-enhanced insights that combine all your assessment responses 
+                      for a complete career analysis.
+                    </p>
                   </div>
                 )}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+                )}
+            </div>
+          </div>
 
           {/* Enhanced Chat Sidebar */}
           <div className="lg:col-span-1 space-y-6">
