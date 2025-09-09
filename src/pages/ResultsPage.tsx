@@ -591,7 +591,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
             <p className="text-gray-700 leading-relaxed">
               <strong>About Your Results:</strong> The above results are calculated using your quantitative responses from Layers 1-5 (Multiple Intelligences, Personality Traits, Aptitudes & Skills, Background & Environment, and Interests & Values).
-              Layer 6's open-ended responses have been used qualitatively to inform and train the AI for more personalized guidance in the chat section and enhanced analysis below.
+              Layer 6's open-ended responses have been used qualitatively to inform and train the AI for more personalized 
+              guidance in the chat section and enhanced analysis below.
             </p>
           </div>
 
@@ -821,7 +822,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                             </p>
                             <p>
                               These scores represent your compatibility with different career paths, calculated using advanced AI analysis of your complete profile.
- Higher scores indicate stronger alignment with your skills, personality, and personal aspirations.
+                              Higher scores indicate stronger alignment with your skills, personality, and personal aspirations.
                             </p>
                           </div>
                         </div>
@@ -927,11 +928,13 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                     </div>
                     <h3 className="text-xl font-semibold text-gray-800 mb-3">Ready for Deep Insights?</h3>
                     <p className="text-gray-600 max-w-md mx-auto">
-                      Click the button above to generate comprehensive AI-enhanced insights that combine all your assessment responses for a complete career analysis.
+                      Click the button above to generate comprehensive AI-enhanced insights that combine all your assessment responses 
+                      for a complete career analysis.
                     </p>
                   </div>
                 )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
