@@ -16,7 +16,6 @@ interface SupabaseResponse {
   layer_number: number;
   category_id: string;
   question_id: string;
-  question_text: string;
   response_value: number | string | string[];
 }
 
@@ -39,11 +38,9 @@ function App() {
           completed_at,
           scores,
           recommended_careers,
-          ml_prediction,
           assessment_responses (
             assessment_id,
             question_id,
-            question_text,
             response_value,
             category_id,
             layer_number
@@ -60,7 +57,7 @@ function App() {
           layerId: `layer${r.layer_number}`,
           categoryId: r.category_id,
           questionId: r.question_id,
-          questionText: r.question_text,
+          questionText: '', // question_text does not exist in the DB
           response: r.response_value,
         }));
 
@@ -81,7 +78,7 @@ function App() {
           responses,
           scores,
           recommendedCareers,
-          mlPrediction: assessment.ml_prediction || recommendedCareers[0],
+          mlPrediction: recommendedCareers[0], // ml_prediction does not exist in the DB
         };
       });
 
@@ -101,7 +98,6 @@ function App() {
           completed_at: assessment.completedAt.toISOString(),
           scores: assessment.scores,
           recommended_careers: assessment.recommendedCareers,
-          ml_prediction: assessment.mlPrediction,
           status: 'completed'
         })
         .select('id')
@@ -116,7 +112,6 @@ function App() {
       const responsesToInsert = assessment.responses.map(response => ({
         assessment_id: assessmentId,
         question_id: response.questionId,
-        question_text: response.questionText,
         response_value: response.response,
         category_id: response.categoryId,
         layer_number: parseInt(response.layerId.replace('layer', ''), 10)
