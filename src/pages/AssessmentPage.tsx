@@ -12,6 +12,22 @@ interface AssessmentPageProps {
 }
 
 export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete, previousAssessments = [] }) => {
+  const [previousAnswersMap, setPreviousAnswersMap] = useState<Map<string, number | string>>(new Map());
+
+  useEffect(() => {
+    if (previousAssessments.length > 0) {
+      // Sort assessments by date to find the most recent one
+      const sortedAssessments = [...previousAssessments].sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
+      const lastAssessment = sortedAssessments[0];
+
+      const answerMap = new Map<string, number | string>();
+      lastAssessment.responses.forEach(response => {
+        answerMap.set(response.questionId, response.response);
+      });
+      setPreviousAnswersMap(answerMap);
+    }
+  }, [previousAssessments]);
+
   const getInitialState = () => {
     const savedData = localStorage.getItem(`inProgressAssessment_${user.id}`);
     if (savedData) {
@@ -139,6 +155,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               careers={generateCareerRecommendations(scores)}
               previousAssessments={previousAssessments}
               allUserResponses={responses}
+              previousAnswersMap={previousAnswersMap}
             />
           </div>
         </div>
