@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, Lightbulb, ChevronDown, ChevronUp, Sparkles, Clock } from 'lucide-react';
+import { HelpCircle, Lightbulb, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { Question, AssessmentResponse } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -15,7 +15,6 @@ interface QuestionCardProps {
   careers?: string[];
   previousAssessments?: any[];
   allUserResponses?: AssessmentResponse[];
-  previousAnswersMap?: Map<string, number | string>;
 }
 
 const LIKERT_OPTIONS = [
@@ -35,8 +34,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   userScores = {},
   careers = [],
   previousAssessments = [],
-  allUserResponses = [],
-  previousAnswersMap = new Map()
+  allUserResponses = []
 }) => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [showDetailedExplanation, setShowDetailedExplanation] = useState(false);
@@ -48,7 +46,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [suggestionExplanation, setSuggestionExplanation] = useState('');
   const [loadingDetailedExplanation, setLoadingDetailedExplanation] = useState(false);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const [careerInputs, setCareerInputs] = useState<string[]>(['', '', '']);
 
   // Reset all states when answer is selected or question changes
@@ -180,42 +177,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 {showSuggestion ? 'Hide' : 'Suggest'}
               </Button>
             )}
-            {question.type === 'open-ended' && previousAssessments.length > 0 && (
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={Clock}
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="text-gray-600 hover:text-gray-800"
-                >
-                  History
-                </Button>
-                {showHistory && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-xl z-10">
-                    <div className="p-3 border-b">
-                      <p className="text-sm font-semibold text-gray-700">Answer History</p>
-                    </div>
-                    <div className="max-h-60 overflow-y-auto">
-                      {previousAssessments.map((assessment, index) => {
-                        const pastResponse = assessment.responses.find(r => r.questionId === question.id);
-                        if (pastResponse) {
-                          return (
-                            <div key={assessment.id} className="p-3 border-b last:border-b-0 hover:bg-gray-50">
-                              <p className="text-xs font-bold text-gray-500 mb-1">
-                                Assessment #{previousAssessments.length - index} ({new Date(assessment.completedAt).toLocaleDateString()})
-                              </p>
-                              <p className="text-sm text-gray-800 italic">"{pastResponse.response}"</p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }).reverse()}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
@@ -297,27 +258,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
         {question.type === 'likert' ? (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-6">
-            {LIKERT_OPTIONS.map((option) => {
-              const previousAnswer = previousAnswersMap.get(question.id);
-              const isPreviousAnswer = previousAnswer === option.value;
-              const isCurrentAnswer = currentAnswer === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => onAnswer(question.id, option.value)}
-                  className={`p-3 text-sm rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
-                    isCurrentAnswer
-                      ? 'border-primary-600 bg-gradient-to-r from-primary-50 to-purple-50 text-primary-800 shadow-lg'
-                      : isPreviousAnswer
-                      ? 'border-gray-200 bg-blue-100' // Highlight for previous answer
-                      : 'border-gray-200 hover:border-primary-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-primary-50'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+            {LIKERT_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => onAnswer(question.id, option.value)}
+                className={`p-3 text-sm rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
+                  currentAnswer === option.value
+                    ? 'border-primary-600 bg-gradient-to-r from-primary-50 to-purple-50 text-primary-800 shadow-lg'
+                    : 'border-gray-200 hover:border-primary-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-primary-50'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         ) : question.id === 'l6-synth-4' ? (
           <div className="space-y-4 mt-6">

@@ -15,7 +15,6 @@ interface AssessmentLayerProps {
   careers?: string[];
   previousAssessments?: any[];
   allUserResponses?: AssessmentResponse[];
-  previousAnswersMap?: Map<string, number | string>;
 }
 
 export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
@@ -27,8 +26,7 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
   userScores,
   careers,
   previousAssessments,
-  allUserResponses,
-  previousAnswersMap
+  allUserResponses
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -114,7 +112,6 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
         careers={careers}
         previousAssessments={previousAssessments}
         allUserResponses={allUserResponses}
-        previousAnswersMap={previousAnswersMap}
       />
 
       <div className="flex justify-between items-center mt-8">

@@ -32,22 +32,6 @@ export const generateCareerRecommendations = (scores: Record<string, number>): s
     }
   });
 
-  const uniqueRecommendations = [...new Set(recommendations)];
-
-  // If not enough recommendations, add some general ones to ensure a good list
-  if (uniqueRecommendations.length < 8) {
-    const generalCareers = [
-      "Marketing Manager", "Software Developer", "Human Resources Specialist",
-      "Financial Analyst", "Project Manager", "Graphic Designer",
-      "Data Analyst", "Registered Nurse", "Sales Manager", "Customer Service Representative"
-    ];
-    for (const career of generalCareers) {
-      if (uniqueRecommendations.length < 8 && !uniqueRecommendations.includes(career)) {
-        uniqueRecommendations.push(career);
-      }
-    }
-  }
-
-  // Limit to a max of 10
-  return uniqueRecommendations.slice(0, 10);
+  // Remove duplicates and limit to top 10
+  return [...new Set(recommendations)].slice(0, 10);
 };

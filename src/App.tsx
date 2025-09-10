@@ -40,8 +40,6 @@ function App() {
           scores,
           recommended_careers,
           ml_prediction,
-          status,
-          current_layer_index,
           assessment_responses (
             assessment_id,
             question_id,
@@ -54,6 +52,7 @@ function App() {
           )
         `)
         .eq('user_id', userId)
+        .eq('status', 'completed')
         .order('completed_at', { ascending: false });
 
       if (error) throw error;
@@ -85,19 +84,10 @@ function App() {
           scores,
           recommendedCareers,
           mlPrediction: assessment.ml_prediction || recommendedCareers[0],
-          status: assessment.status,
-          currentLayerIndex: assessment.current_layer_index,
         };
       });
 
-      const completed = formattedAssessments.filter(a => a.status === 'completed');
-      const inProgress = formattedAssessments.find(a => a.status === 'in-progress');
-
-      setUserAssessments(completed);
-      if (inProgress) {
-        // Set the in-progress assessment so it can be resumed
-        setCurrentAssessment(inProgress);
-      }
+      setUserAssessments(formattedAssessments);
     } catch (error) {
       console.error('Failed to load user assessments:', error);
     }
@@ -245,24 +235,7 @@ function App() {
   };
 
   const handleStartNewAssessment = () => {
-    // This will now be for starting a completely new assessment,
-    // potentially overwriting an in-progress one.
-    // We should add a confirmation modal here in a future step if desired.
-    setCurrentAssessment(null);
-    if (user) {
-      localStorage.removeItem(`inProgressAssessment_${user.id}`);
-    }
     setCurrentState('assessment');
-  };
-
-  const handleResumeAssessment = () => {
-    // currentAssessment should already be set to the in-progress one by loadUserAssessments
-    if (currentAssessment && currentAssessment.status === 'in-progress') {
-      setCurrentState('assessment');
-    } else {
-      // Fallback in case there's no in-progress assessment to resume
-      handleStartNewAssessment();
-    }
   };
 
   const handleViewResults = (assessment: Assessment) => {
@@ -304,8 +277,6 @@ function App() {
             assessments={userAssessments}
             onStartNewAssessment={handleStartNewAssessment}
             onViewResults={handleViewResults}
-            onResumeAssessment={handleResumeAssessment}
-            inProgressAssessment={currentAssessment?.status === 'in-progress' ? currentAssessment : undefined}
           />
         )}
 
@@ -322,7 +293,6 @@ function App() {
             assessment={currentAssessment}
             user={user}
             previousAssessments={userAssessments.slice(0, -1)}
-            onFinish={handleBackToDashboard}
           />
         )}
       </main>
