@@ -10,13 +10,17 @@ interface DashboardPageProps {
   assessments: Assessment[];
   onStartNewAssessment: () => void;
   onViewResults: (assessment: Assessment) => void;
+  onResumeAssessment: () => void;
+  inProgressAssessment?: Assessment;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   user,
   assessments,
   onStartNewAssessment,
-  onViewResults
+  onViewResults,
+  onResumeAssessment,
+  inProgressAssessment
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
   const [loadedAssessments, setLoadedAssessments] = useState<Assessment[]>([]);
@@ -119,14 +123,38 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </h1>
               <p className="text-xl text-gray-600">Track your career development journey</p>
             </div>
-            <Button
-              icon={Plus}
-              onClick={onStartNewAssessment}
-              size="lg"
-              className="hover:scale-105 transition-transform duration-200"
-            >
-              Take New Assessment
-            </Button>
+            <div className="flex items-center gap-4">
+              {inProgressAssessment ? (
+                <>
+                  <Button
+                    icon={ArrowRight}
+                    onClick={onResumeAssessment}
+                    size="lg"
+                    variant="primary"
+                    className="hover:scale-105 transition-transform duration-200"
+                  >
+                    Resume Assessment
+                  </Button>
+                  <Button
+                    icon={Plus}
+                    onClick={onStartNewAssessment}
+                    size="lg"
+                    variant="outline"
+                  >
+                    Start a New One
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  icon={Plus}
+                  onClick={onStartNewAssessment}
+                  size="lg"
+                  className="hover:scale-105 transition-transform duration-200"
+                >
+                  Take New Assessment
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
