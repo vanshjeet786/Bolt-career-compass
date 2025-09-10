@@ -236,6 +236,9 @@ function App() {
 
   const handleStartNewAssessment = () => {
     setCurrentAssessment(null);
+    if (user) {
+      localStorage.removeItem(`inProgressAssessment_${user.id}`);
+    }
     setCurrentState('assessment');
   };
 
