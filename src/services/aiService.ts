@@ -210,8 +210,6 @@ class AIService {
       try {
         return JSON.parse(jsonString);
       } catch (e: any) {
-        // Log the problematic string for debugging
-        console.error("Failed to parse the following JSON string:", jsonString);
         // Throw a more informative error if parsing fails
         e.message = `JSON parsing failed: ${e.message}\nOriginal response: ${raw}`;
         throw e;
@@ -570,7 +568,7 @@ Generate the JSON response as per the system instructions.`
         }
       ];
 
-      const response = await invokeGroqFunction(messages, 1200, 0.75);
+      const response = await invokeGroqFunction(messages, 2400, 0.75);
       
       let parsedResponse;
       try {
