@@ -190,6 +190,19 @@ async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temp
 
 class AIService {
   private responseCache = new Map<string, any>();
+  
+  /**
+  * Extracts and safely parses the first valid JSON object from raw AI response text.
+  */
+  private _safeParseJSON(raw: string): any {
+      const firstBrace = raw.indexOf("{");
+      const lastBrace = raw.lastIndexOf("}");
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+          throw new Error("No valid JSON object found in AI response");
+      }
+      const jsonString = raw.substring(firstBrace, lastBrace + 1);
+      return JSON.parse(jsonString);
+  }
 
   async generateCareerRecommendations(
     scores: Record<string, number>,
@@ -312,7 +325,7 @@ Keep the explanation encouraging and actionable, around 150-200 words.`
       const messages = [
         {
           role: "system",
-          content: "You are an expert career counselor providing personalized suggestions for Layer 6 open-ended assessment questions. Generate 2-3 distinct, instructional suggestions that are specifically tailored to the user's Layers 1-5 responses. Each suggestion should explain what to consider, provide guidance, AND include a sample answer or direction based on their profile. Be warm, encouraging, and specific."
+          content: "You are an expert career counselor providing personalized suggestions for Layer 6 open-ended assessment questions. Generate 2-3 distinct, instructional suggestions that are specifically tailored to the user's Layers 1-5 responses. Each suggestion should explain what to consider, provide guidance, AND include a sample answer or direction based on their profile. Return ONLY valid JSON. Do not include explanations, thinking steps, or any text outside the JSON object."
         },
         {
           role: "user",
@@ -346,15 +359,8 @@ Be warm, encouraging, and specific. Each suggestion should feel personally craft
 
       const jsonResponse = await invokeGroqFunction(messages, 800, 0.8);
 
-      // WORKAROUND: The AI can sometimes return non-JSON text along with the JSON object.
-      // This regex extracts the first valid JSON object from the response string.
-      const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error("No valid JSON object found in AI suggestion response:", jsonResponse);
-        throw new Error("No valid JSON object found in AI response");
-      }
+      const parsed = this._safeParseJSON(jsonResponse);
 
-      const parsed = JSON.parse(jsonMatch[0]);
       if (Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0 && typeof parsed.explanation === 'string') {
         return parsed;
       }
@@ -529,7 +535,7 @@ User's Assessment Results:
       const messages = [
         {
           role: "system",
-          content: `You are a warm, experienced career counselor. Your task is to analyze a user's complete 6-layer assessment, combining quantitative scores (Layers 1-5) with qualitative personal context (Layer 6). Provide personalized, empowering insights and actionable recommendations. The output MUST be valid JSON.
+          content: `You are a warm, experienced career counselor. Your task is to analyze a user's complete 6-layer assessment, combining quantitative scores (Layers 1-5) with qualitative personal context (Layer 6). Provide personalized, empowering insights and actionable recommendations. The output MUST be valid JSON. Do not include explanations, thinking steps, or any text outside the JSON object.
 
 Instructions for JSON fields:
 1. "insights": A comprehensive, narrative insight (2-3 paragraphs) that synthesizes the quantitative scores with the qualitative responses.
@@ -552,21 +558,11 @@ Generate the JSON response as per the system instructions.`
 
       const response = await invokeGroqFunction(messages, 1200, 0.75);
       
-      // WORKAROUND: The AI can sometimes return non-JSON text along with the JSON object.
-      // This regex extracts the first valid JSON object from the response string.
-      // This can be simplified to `JSON.parse(response)` if the backend function is
-      // updated to guarantee a clean JSON response.
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        console.error("No valid JSON object found in AI response:", response);
-        throw new Error("No valid JSON object found in AI response");
-      }
-
       let parsedResponse;
       try {
-        parsedResponse = JSON.parse(jsonMatch[0]);
+        parsedResponse = this._safeParseJSON(response);
       } catch (parseError) {
-        console.error("JSON parsing failed:", parseError, "Original response:", jsonMatch[0]);
+        console.error("JSON parsing failed:", parseError, "Original response:", response);
         throw new Error("Invalid JSON structure in AI response");
       }
       
@@ -575,7 +571,7 @@ Generate the JSON response as per the system instructions.`
       const finalVisualizationData = {
         labels: parsedResponse.visualizationData?.labels || top8Categories,
         baseScores: parsedResponse.visualizationData?.baseScores || top8BaseScores,
-        enhancedScores: parsedResponse.visualizationData?.enhancedScores || top8BaseScores.map(score => Math.min(5, score + 0.1)) // Default slight boost
+        enhancedScores: (parsedResponse.visualizationData?.enhancedScores || top8BaseScores.map(score => Math.min(5, score + 0.1))).map((s: number) => Math.max(0, Math.min(5, s))) // Default slight boost and clamp
       };
 
       return {
