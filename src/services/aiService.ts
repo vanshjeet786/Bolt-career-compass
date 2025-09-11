@@ -346,11 +346,8 @@ Be warm, encouraging, and specific. Each suggestion should feel personally craft
 
       const jsonResponse = await invokeGroqFunction(messages, 800, 0.8);
 
-      // Extract JSON from response
-      const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No valid JSON found in AI response");
-
-      const parsed = JSON.parse(jsonMatch[0]);
+      // The backend function now guarantees a JSON response.
+      const parsed = JSON.parse(jsonResponse);
       if (Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0 && typeof parsed.explanation === 'string') {
         return parsed;
       }
@@ -548,12 +545,10 @@ Generate the JSON response as per the system instructions.`
 
       const response = await invokeGroqFunction(messages, 1200, 0.75);
       
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No valid JSON found in AI response");
-
       let parsedResponse;
       try {
-        parsedResponse = JSON.parse(jsonMatch[0]);
+        // The backend function now guarantees a JSON response.
+        parsedResponse = JSON.parse(response);
       } catch (parseError) {
         console.error("JSON parsing failed:", parseError);
         throw new Error("Invalid JSON structure in AI response");
