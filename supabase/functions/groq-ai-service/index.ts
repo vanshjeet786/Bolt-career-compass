@@ -47,6 +47,7 @@ serve(async (req) => {
           temperature: temperature,
           top_p: 0.9,
           stream: false,
+          response_format: { type: "json_object" },
         }),
       }
     );

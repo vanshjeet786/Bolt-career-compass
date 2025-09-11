@@ -120,17 +120,23 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
   if (!context) throw new Error('AccordionContent must be used within Accordion');
 
   const { openItems } = context;
-  const value = 'ai-enhanced'; // Default value for this implementation
+  // This is a bit of a hack since the item doesn't pass its value down.
+  // A better implementation would pass the value through context from AccordionItem.
+  // For now, we assume a single value for the AI results accordion.
+  const value = 'ai-enhanced';
   const isOpen = openItems.has(value);
 
   return (
     <div
-      className={`overflow-hidden transition-all duration-300 ${
-        isOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
-      }`}
+      className="grid transition-all duration-500 ease-in-out"
+      style={{
+        gridTemplateRows: isOpen ? '1fr' : '0fr',
+      }}
     >
-      <div className={`p-6 bg-white border-t border-gray-200 ${className}`}>
-        {children}
+      <div className={`overflow-hidden ${className}`}>
+        <div className="p-6 bg-white border-t border-gray-200">
+          {children}
+        </div>
       </div>
     </div>
   );
