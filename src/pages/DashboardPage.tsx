@@ -19,36 +19,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onViewResults
 }) => {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
-  const [loadedAssessments, setLoadedAssessments] = useState<Assessment[]>([]);
-
-  // Load assessments from Supabase on component mount
-  useEffect(() => {
-    const loadAssessments = async () => {
-      try {
-        const { data: assessments, error } = await supabase
-          .from('assessments')
-          .select(`
-            *,
-            assessment_responses (*)
-          `)
-          .eq('user_id', user.id)
-          .eq('status', 'completed')
-          .order('completed_at', { ascending: false });
-
-        if (error) throw error;
-
-        // Use the assessments from props if available, otherwise use loaded ones
-        setLoadedAssessments(assessments || []);
-      } catch (error) {
-        console.error('Failed to load assessments:', error);
-      }
-    };
-
-    loadAssessments();
-  }, [user.id]);
 
   const getFilteredAssessments = () => {
-    const allAssessments = assessments.length > 0 ? assessments : loadedAssessments;
+    const allAssessments = assessments;
     if (selectedTimeframe === 'all') return allAssessments;
     
     const cutoffDate = new Date();
@@ -88,7 +61,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   const getTopStrengths = () => {
-    const allAssessments = assessments.length > 0 ? assessments : loadedAssessments;
+    const allAssessments = assessments;
     if (allAssessments.length === 0) return [];
     
     const latestAssessment = allAssessments[allAssessments.length - 1];
@@ -101,7 +74,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   const filteredAssessments = getFilteredAssessments();
-  const allAssessments = assessments.length > 0 ? assessments : loadedAssessments;
+  const allAssessments = assessments;
   const progressInsights = getProgressInsights();
   const topStrengths = getTopStrengths();
 
