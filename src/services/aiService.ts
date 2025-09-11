@@ -1,4 +1,3 @@
-import { ChatMessage, Question, AssessmentResponse } from '../types';
 import { supabase } from './supabaseClient';
 
 interface AIServiceResponse {
@@ -216,6 +215,7 @@ class AIService {
       }
   }
 
+
   async generateCareerRecommendations(
     scores: Record<string, number>,
     responses: any[],
@@ -325,9 +325,9 @@ Keep the explanation encouraging and actionable, around 150-200 words.`
         .slice(0, 5)
         .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
         .join(', ');
-      
+
       const qualitativeInsights = allUserResponses?.filter(r => r.layerId === 'layer6').map(r => r.response).join('; ') || 'Not yet provided';
-      
+
       // Build detailed context from Layers 1-5 responses
       const layer15Context = allUserResponses?.filter(r => r.layerId !== 'layer6').map(r => 
         `${r.categoryId} - ${r.questionText}: ${r.response}`
@@ -337,7 +337,7 @@ Keep the explanation encouraging and actionable, around 150-200 words.`
       const messages = [
         {
           role: "system",
-          content: "You are an expert career counselor providing personalized suggestions for Layer 6 open-ended assessment questions. Generate 2-3 distinct, instructional suggestions that are specifically tailored to the user's Layers 1-5 responses. Each suggestion should explain what to consider, provide guidance, AND include a sample answer or direction based on their profile. Return ONLY valid JSON. Do not include explanations, thinking steps, or any text outside the JSON object."
+          content: "You are an expert career counselor providing personalized suggestions for Layer 6 open-ended assessment questions. Generate 2-3 distinct, instructional suggestions that are specifically tailored to the user's Layers 1-5 responses. Each suggestion should explain what to consider, provide guidance, AND include a sample answer or direction based on their profile. Be warm, encouraging, and specific."
         },
         {
           role: "user",
@@ -371,8 +371,11 @@ Be warm, encouraging, and specific. Each suggestion should feel personally craft
 
       const jsonResponse = await invokeGroqFunction(messages, 800, 0.8);
 
-      const parsed = this._safeParseJSON(jsonResponse);
+      // Extract JSON from response
+      const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("No valid JSON found in AI response");
 
+      const parsed = JSON.parse(jsonMatch[0]);
       if (Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0 && typeof parsed.explanation === 'string') {
         return parsed;
       }
@@ -530,7 +533,7 @@ User's Assessment Results:
       const qualitativeInsights = layer6Responses.map(r =>
         `${r.questionText}: ${r.response}`
       ).join('\n');
-      
+
       // Get top 8 categories for visualization
       const sortedScores = Object.entries(quantitativeScores)
         .sort(([, a], [, b]) => b - a);
@@ -547,7 +550,7 @@ User's Assessment Results:
       const messages = [
         {
           role: "system",
-          content: `You are a warm, experienced career counselor. Your task is to analyze a user's complete 6-layer assessment, combining quantitative scores (Layers 1-5) with qualitative personal context (Layer 6). Provide personalized, empowering insights and actionable recommendations. The output MUST be valid JSON. Do not include explanations, thinking steps, or any text outside the JSON object.
+          content: `You are a warm, experienced career counselor. Your task is to analyze a user's complete 6-layer assessment, combining quantitative scores (Layers 1-5) with qualitative personal context (Layer 6). Provide personalized, empowering insights and actionable recommendations. The output MUST be valid JSON.
 
 Instructions for JSON fields:
 1. "insights": A comprehensive, narrative insight (2-3 paragraphs) that synthesizes the quantitative scores with the qualitative responses.
@@ -569,21 +572,25 @@ Generate the JSON response as per the system instructions.`
       ];
 
       const response = await invokeGroqFunction(messages, 1200, 0.75);
-      
+
+
+
+
       let parsedResponse;
       try {
-        parsedResponse = this._safeParseJSON(response);
+        parsedResponse = JSON.parse(response);
       } catch (parseError) {
-        console.error("JSON parsing failed:", parseError, "Original response:", response);
+        console.error("JSON parsing failed:", parseError);
+        console.error("Malformed AI Response:", response); // Log the problematic response
         throw new Error("Invalid JSON structure in AI response");
       }
-      
+
       // Ensure visualizationData labels and scores match the top 8 categories
       // This is a safeguard in case AI doesn't return exactly 8 or misaligns
       const finalVisualizationData = {
         labels: parsedResponse.visualizationData?.labels || top8Categories,
         baseScores: parsedResponse.visualizationData?.baseScores || top8BaseScores,
-        enhancedScores: (parsedResponse.visualizationData?.enhancedScores || top8BaseScores.map(score => Math.min(5, score + 0.1))).map((s: number) => Math.max(0, Math.min(5, s))) // Default slight boost and clamp
+        enhancedScores: parsedResponse.visualizationData?.enhancedScores || top8BaseScores.map(score => Math.min(5, score + 0.1)) // Default slight boost
       };
 
       return {
