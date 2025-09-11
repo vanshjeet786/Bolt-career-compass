@@ -1,144 +1,74 @@
-import React, { useState, createContext, useContext } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-interface AccordionContextType {
-  openItems: Set<string>;
-  toggleItem: (value: string) => void;
-  type: 'single' | 'multiple';
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const AccordionContext = createContext<AccordionContextType | undefined>(undefined);
+console.log("Groq AI Service function is ready.");
 
-interface AccordionProps {
-  children: React.ReactNode;
-  type?: 'single' | 'multiple';
-  collapsible?: boolean;
-  className?: string;
-}
+serve(async (req) => {
+  // Handle preflight requests for CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
-export const Accordion: React.FC<AccordionProps> = ({ 
-  children, 
-  type = 'single', 
-  collapsible = true,
-  className = '' 
-}) => {
-  const [openItems, setOpenItems] = useState<Set<string>>(new Set());
+  try {
+    console.log("Function received a request. Method:", req.method);
+    const body = await req.json();
+    console.log("Request body parsed successfully.");
+    const { messages, max_tokens = 700, temperature = 0.7 } = body;
 
-  const toggleItem = (value: string) => {
-    if (type === 'single') {
-      if (openItems.has(value) && collapsible) {
-        setOpenItems(new Set());
-      } else {
-        setOpenItems(new Set([value]));
-      }
-    } else {
-      const newOpenItems = new Set(openItems);
-      if (newOpenItems.has(value)) {
-        newOpenItems.delete(value);
-      } else {
-        newOpenItems.add(value);
-      }
-      setOpenItems(newOpenItems);
+    if (!messages || !Array.isArray(messages)) {
+      throw new Error("No 'messages' array found in the request body.");
     }
-  };
+    console.log("Messages received:", messages.length);
 
-  return (
-    <AccordionContext.Provider value={{ openItems, toggleItem, type }}>
-      <div className={`space-y-2 ${className}`}>
-        {children}
-      </div>
-    </AccordionContext.Provider>
-  );
-};
+    const groqApiKey = Deno.env.get('GROQ_API_KEY');
+    if (!groqApiKey) {
+      console.error("CRITICAL: GROQ_API_KEY secret not found in environment variables.");
+      throw new Error("Groq API key is not set in Supabase secrets.");
+    }
+    console.log("Groq API key found.");
 
-interface AccordionItemProps {
-  children: React.ReactNode;
-  value: string;
-  className?: string;
-}
+    console.log("Calling Groq API...");
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen3-32b",
+          messages: messages,
+          max_tokens: max_tokens,
+          temperature: temperature,
+          top_p: 0.9,
+          stream: false,
+          response_format: { type: "json_object" },
+        }),
+      }
+    );
+    console.log("Groq API response status:", response.status);
 
-export const AccordionItem: React.FC<AccordionItemProps> = ({ 
-  children, 
-  value, 
-  className = '' 
-}) => {
-  return (
-    <div className={`border border-gray-200 rounded-lg overflow-hidden ${className}`}>
-      {children}
-    </div>
-  );
-};
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("Groq API Error:", errorBody);
+      throw new Error(`Groq API request failed with status ${response.status}: ${errorBody}`);
+    }
 
-interface AccordionTriggerProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
-}
+    const responseData = await response.json();
+    console.log("Successfully received and parsed response from Groq API.");
 
-export const AccordionTrigger: React.FC<AccordionTriggerProps> = ({ 
-  children, 
-  onClick,
-  className = '' 
-}) => {
-  const context = useContext(AccordionContext);
-  if (!context) throw new Error('AccordionTrigger must be used within Accordion');
-
-  const { openItems, toggleItem } = context;
-  const value = 'ai-enhanced'; // Default value for this implementation
-  const isOpen = openItems.has(value);
-
-  const handleClick = () => {
-    toggleItem(value);
-    onClick?.();
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={`w-full flex items-center justify-between p-4 text-left bg-gradient-to-r from-primary-50 to-purple-50 hover:from-primary-100 hover:to-purple-100 transition-all duration-200 ${className}`}
-    >
-      <span className="font-semibold text-gray-800">{children}</span>
-      <ChevronDown 
-        className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${
-          isOpen ? 'transform rotate-180' : ''
-        }`} 
-      />
-    </button>
-  );
-};
-
-interface AccordionContentProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export const AccordionContent: React.FC<AccordionContentProps> = ({ 
-  children, 
-  className = '' 
-}) => {
-  const context = useContext(AccordionContext);
-  if (!context) throw new Error('AccordionContent must be used within Accordion');
-
-  const { openItems } = context;
-  // This is a bit of a hack since the item doesn't pass its value down.
-  // A better implementation would pass the value through context from AccordionItem.
-  // For now, we assume a single value for the AI results accordion.
-  const value = 'ai-enhanced';
-  const isOpen = openItems.has(value);
-
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateRows: isOpen ? '1fr' : '0fr',
-        transition: 'grid-template-rows 0.3s ease-out',
-      }}
-    >
-      <div className={`overflow-hidden ${className}`}>
-        <div className="p-6 bg-white border-t border-gray-200">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
+    return new Response(JSON.stringify(responseData), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
+  } catch (error) {
+    console.error("An error occurred in the Edge Function:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400,
+    });
