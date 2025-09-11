@@ -128,9 +128,10 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
 
   return (
     <div
-      className="grid transition-all duration-500 ease-in-out"
       style={{
+        display: 'grid',
         gridTemplateRows: isOpen ? '1fr' : '0fr',
+        transition: 'grid-template-rows 0.3s ease-out',
       }}
     >
       <div className={`overflow-hidden ${className}`}>
@@ -140,4 +141,3 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
       </div>
     </div>
   );
-};
