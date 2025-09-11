@@ -141,4 +141,4 @@ export const AccordionContent: React.FC<AccordionContentProps> = ({
       </div>
     </div>
   );
-}
+};
