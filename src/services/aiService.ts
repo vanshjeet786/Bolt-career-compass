@@ -200,7 +200,9 @@ class AIService {
       if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
           throw new Error("No valid JSON object found in AI response");
       }
-      const jsonString = raw.substring(firstBrace, lastBrace + 1);
+      let jsonString = raw.substring(firstBrace, lastBrace + 1);
+      // Attempt to remove trailing commas which can cause parsing errors
+      jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
       return JSON.parse(jsonString);
   }
 
