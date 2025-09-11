@@ -185,7 +185,14 @@ function App() {
           assessments: []
         };
         setUser(user);
-        loadUserAssessments(user.id);
+        await loadUserAssessments(user.id);
+
+        const inProgressAssessment = localStorage.getItem(`inProgressAssessment_${user.id}`);
+        if (inProgressAssessment) {
+          setCurrentState('assessment');
+        } else {
+          setCurrentState('dashboard');
+        }
       }
     };
 
@@ -242,6 +249,10 @@ function App() {
     setCurrentState('assessment');
   };
 
+  const handleResumeAssessment = () => {
+    setCurrentState('assessment');
+  };
+
   const handleViewResults = (assessment: Assessment) => {
     setCurrentAssessment(assessment);
     setCurrentState('results');
@@ -280,6 +291,7 @@ function App() {
             user={user}
             assessments={userAssessments}
             onStartNewAssessment={handleStartNewAssessment}
+            onResumeAssessment={handleResumeAssessment}
             onViewResults={handleViewResults}
           />
         )}

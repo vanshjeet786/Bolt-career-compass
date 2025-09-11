@@ -46,6 +46,15 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   const currentLayer = ASSESSMENT_LAYERS[currentLayerIndex];
   const layerResponses = responses.filter(r => r.layerId === currentLayer?.id);
 
+  const previousAnswers = React.useMemo(() => {
+    if (!previousAssessments || previousAssessments.length === 0) {
+      return new Map<string, any>();
+    }
+    // previousAssessments are sorted newest first from App.tsx
+    const mostRecentAssessment = previousAssessments[0];
+    return new Map(mostRecentAssessment.responses.map(r => [r.questionId, r.response]));
+  }, [previousAssessments]);
+
   // Calculate total questions for progress tracking
   const totalQuestions = ASSESSMENT_LAYERS.reduce((total, layer) => {
     return total + Object.values(layer.categories).reduce((layerTotal, questions) => {
@@ -140,6 +149,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               careers={generateCareerRecommendations(scores)}
               previousAssessments={previousAssessments}
               allUserResponses={responses}
+              previousAnswers={previousAnswers}
             />
           </div>
         </div>

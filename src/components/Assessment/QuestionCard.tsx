@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { HelpCircle, Lightbulb, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
-import { Question, AssessmentResponse } from '../../types';
+import { HelpCircle, Lightbulb, ChevronDown, ChevronUp, Sparkles, Clock } from 'lucide-react';
+import { Question, Assessment, AssessmentResponse } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { aiService } from '../../services/aiService';
@@ -9,6 +9,7 @@ interface QuestionCardProps {
   question: Question;
   onAnswer: (questionId: string, answer: number | string) => void;
   currentAnswer?: number | string;
+  previousResponse?: number | string;
   layerId: string;
   categoryId: string;
   userScores?: Record<string, number>;
@@ -29,6 +30,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   onAnswer,
   currentAnswer,
+  previousResponse,
   layerId,
   categoryId,
   userScores = {},
@@ -47,6 +49,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [loadingDetailedExplanation, setLoadingDetailedExplanation] = useState(false);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
   const [careerInputs, setCareerInputs] = useState<string[]>(['', '', '']);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Reset all states when answer is selected or question changes
   useEffect(() => {
@@ -177,6 +180,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 {showSuggestion ? 'Hide' : 'Suggest'}
               </Button>
             )}
+            {question.type === 'open-ended' && previousAssessments.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={Clock}
+                onClick={() => setShowHistory(!showHistory)}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                {showHistory ? 'Hide' : 'History'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -256,6 +270,35 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </div>
         )}
 
+        {showHistory && (
+          <div className="bg-gray-50 border-l-4 border-gray-400 p-4 rounded-r-lg">
+            <div className="flex items-start">
+              <Clock className="w-5 h-5 text-gray-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900 mb-2">Answer History</p>
+                <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                  {previousAssessments.map((assessment: Assessment, index: number) => {
+                    const historyResponse = assessment.responses.find(r => r.questionId === question.id);
+                    if (!historyResponse || !historyResponse.response) return null;
+
+                    return (
+                      <div key={assessment.id} className="text-sm">
+                        <p className="font-semibold text-gray-700">
+                          Assessment #{previousAssessments.length - index}
+                          <span className="font-normal text-gray-500 ml-2">({new Date(assessment.completedAt).toLocaleDateString()})</span>
+                        </p>
+                        <p className="bg-white p-2 mt-1 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap">
+                          {historyResponse.response}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {question.type === 'likert' ? (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-6">
             {LIKERT_OPTIONS.map((option) => (
@@ -265,6 +308,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 className={`p-3 text-sm rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
                   currentAnswer === option.value
                     ? 'border-primary-600 bg-gradient-to-r from-primary-50 to-purple-50 text-primary-800 shadow-lg'
+                    : previousResponse === option.value
+                    ? 'bg-blue-100 border-blue-200'
                     : 'border-gray-200 hover:border-primary-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-primary-50'
                 }`}
               >

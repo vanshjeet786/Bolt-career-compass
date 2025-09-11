@@ -15,6 +15,7 @@ interface AssessmentLayerProps {
   careers?: string[];
   previousAssessments?: any[];
   allUserResponses?: AssessmentResponse[];
+  previousAnswers?: Map<string, any>;
 }
 
 export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
@@ -26,7 +27,8 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
   userScores,
   careers,
   previousAssessments,
-  allUserResponses
+  allUserResponses,
+  previousAnswers
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -44,6 +46,7 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
 
   const currentQuestion = allQuestions[currentQuestionIndex];
   const currentResponse = responses.find(r => r.questionId === currentQuestion?.id);
+  const previousResponse = previousAnswers?.get(currentQuestion?.id);
   
   const handleAnswer = (questionId: string, answer: number | string) => {
     const question = allQuestions.find(q => q.id === questionId);
@@ -106,6 +109,7 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
         question={currentQuestion}
         onAnswer={handleAnswer}
         currentAnswer={currentResponse?.response}
+        previousResponse={previousResponse}
         layerId={layer.id}
         categoryId={currentQuestion.category}
         userScores={userScores}
