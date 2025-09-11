@@ -3,12 +3,13 @@ import { User, Assessment } from '../types';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../services/supabaseClient';
-import { BarChart3, Calendar, TrendingUp, Award, Target, BookOpen, Users, ArrowRight, Plus, Eye } from 'lucide-react';
+import { BarChart3, Calendar, TrendingUp, Award, Target, BookOpen, Users, ArrowRight, Plus, Eye, Play } from 'lucide-react';
 
 interface DashboardPageProps {
   user: User;
   assessments: Assessment[];
   onStartNewAssessment: () => void;
+  onResumeAssessment: () => void;
   onViewResults: (assessment: Assessment) => void;
 }
 
@@ -16,8 +17,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   user,
   assessments,
   onStartNewAssessment,
+  onResumeAssessment,
   onViewResults
 }) => {
+  const [hasInProgress, setHasInProgress] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      const savedData = localStorage.getItem(`inProgressAssessment_${user.id}`);
+      setHasInProgress(!!savedData);
+    }
+  }, [user]);
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '6months' | '1year'>('all');
 
   const getFilteredAssessments = () => {
@@ -92,14 +102,27 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </h1>
               <p className="text-xl text-gray-600">Track your career development journey</p>
             </div>
-            <Button
-              icon={Plus}
-              onClick={onStartNewAssessment}
-              size="lg"
-              className="hover:scale-105 transition-transform duration-200"
-            >
-              Take New Assessment
-            </Button>
+            <div className="flex items-center space-x-4">
+              {hasInProgress && (
+                <Button
+                  icon={Play}
+                  onClick={onResumeAssessment}
+                  size="lg"
+                  className="hover:scale-105 transition-transform duration-200"
+                >
+                  Resume Assessment
+                </Button>
+              )}
+              <Button
+                icon={Plus}
+                onClick={onStartNewAssessment}
+                size="lg"
+                variant={hasInProgress ? "outline" : "default"}
+                className="hover:scale-105 transition-transform duration-200"
+              >
+                Take New Assessment
+              </Button>
+            </div>
           </div>
         </div>
 
