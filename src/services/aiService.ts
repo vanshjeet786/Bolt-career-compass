@@ -1,3 +1,4 @@
+import { ChatMessage, Question, AssessmentResponse } from '../types';
 import { supabase } from './supabaseClient';
 
 interface AIServiceResponse {
@@ -189,32 +190,6 @@ async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temp
 
 class AIService {
   private responseCache = new Map<string, any>();
-  
-  /**
-  * Extracts and safely parses the first valid JSON object from raw AI response text.
-  */
-  private _safeParseJSON(raw: string): any {
-      const firstBrace = raw.indexOf("{");
-      const lastBrace = raw.lastIndexOf("}");
-      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-          // If no JSON object is found, check for the original error from the user's log
-          if (raw.includes("Unexpected token '<'")) {
-              throw new Error("Malformed AI Response: " + raw);
-          }
-          throw new Error("No valid JSON object found in AI response");
-      }
-      let jsonString = raw.substring(firstBrace, lastBrace + 1);
-      // Attempt to remove trailing commas which can cause parsing errors
-      jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
-      try {
-        return JSON.parse(jsonString);
-      } catch (e: any) {
-        // Throw a more informative error if parsing fails
-        e.message = `JSON parsing failed: ${e.message}\nOriginal response: ${raw}`;
-        throw e;
-      }
-  }
-
 
   async generateCareerRecommendations(
     scores: Record<string, number>,
@@ -325,9 +300,9 @@ Keep the explanation encouraging and actionable, around 150-200 words.`
         .slice(0, 5)
         .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
         .join(', ');
-
+      
       const qualitativeInsights = allUserResponses?.filter(r => r.layerId === 'layer6').map(r => r.response).join('; ') || 'Not yet provided';
-
+      
       // Build detailed context from Layers 1-5 responses
       const layer15Context = allUserResponses?.filter(r => r.layerId !== 'layer6').map(r => 
         `${r.categoryId} - ${r.questionText}: ${r.response}`
@@ -371,11 +346,16 @@ Be warm, encouraging, and specific. Each suggestion should feel personally craft
 
       const jsonResponse = await invokeGroqFunction(messages, 800, 0.8);
 
-      // Extract JSON from response
-      const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No valid JSON found in AI response");
+      const firstBrace = jsonResponse.indexOf('{');
+      const lastBrace = jsonResponse.lastIndexOf('}');
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+          console.error("No valid JSON object found in AI suggestion response:", jsonResponse);
+          throw new Error("No valid JSON object found in AI response");
+      }
 
-      const parsed = JSON.parse(jsonMatch[0]);
+      const jsonString = jsonResponse.substring(firstBrace, lastBrace + 1);
+      const parsed = JSON.parse(jsonString);
+
       if (Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0 && typeof parsed.explanation === 'string') {
         return parsed;
       }
@@ -533,7 +513,7 @@ User's Assessment Results:
       const qualitativeInsights = layer6Responses.map(r =>
         `${r.questionText}: ${r.response}`
       ).join('\n');
-
+      
       // Get top 8 categories for visualization
       const sortedScores = Object.entries(quantitativeScores)
         .sort(([, a], [, b]) => b - a);
@@ -572,19 +552,24 @@ Generate the JSON response as per the system instructions.`
       ];
 
       const response = await invokeGroqFunction(messages, 1200, 0.75);
-
-
-
-
-      let parsedResponse;
-      try {
-        parsedResponse = JSON.parse(response);
-      } catch (parseError) {
-        console.error("JSON parsing failed:", parseError);
-        console.error("Malformed AI Response:", response); // Log the problematic response
-        throw new Error("Invalid JSON structure in AI response");
+      
+      const firstBrace = response.indexOf('{');
+      const lastBrace = response.lastIndexOf('}');
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+          console.error("No valid JSON object found in AI response:", response);
+          throw new Error("No valid JSON object found in AI response");
       }
 
+      const jsonString = response.substring(firstBrace, lastBrace + 1);
+      
+      let parsedResponse;
+      try {
+        parsedResponse = JSON.parse(jsonString);
+      } catch (parseError) {
+        console.error("JSON parsing failed:", parseError, "Original response:", jsonString);
+        throw new Error("Invalid JSON structure in AI response");
+      }
+      
       // Ensure visualizationData labels and scores match the top 8 categories
       // This is a safeguard in case AI doesn't return exactly 8 or misaligns
       const finalVisualizationData = {
