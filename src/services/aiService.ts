@@ -346,8 +346,15 @@ Be warm, encouraging, and specific. Each suggestion should feel personally craft
 
       const jsonResponse = await invokeGroqFunction(messages, 800, 0.8);
 
-      // The backend function now guarantees a JSON response.
-      const parsed = JSON.parse(jsonResponse);
+      // WORKAROUND: The AI can sometimes return non-JSON text along with the JSON object.
+      // This regex extracts the first valid JSON object from the response string.
+      const jsonMatch = jsonResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error("No valid JSON object found in AI suggestion response:", jsonResponse);
+        throw new Error("No valid JSON object found in AI response");
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
       if (Array.isArray(parsed.suggestions) && parsed.suggestions.length > 0 && typeof parsed.explanation === 'string') {
         return parsed;
       }
@@ -545,12 +552,21 @@ Generate the JSON response as per the system instructions.`
 
       const response = await invokeGroqFunction(messages, 1200, 0.75);
       
+      // WORKAROUND: The AI can sometimes return non-JSON text along with the JSON object.
+      // This regex extracts the first valid JSON object from the response string.
+      // This can be simplified to `JSON.parse(response)` if the backend function is
+      // updated to guarantee a clean JSON response.
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error("No valid JSON object found in AI response:", response);
+        throw new Error("No valid JSON object found in AI response");
+      }
+
       let parsedResponse;
       try {
-        // The backend function now guarantees a JSON response.
-        parsedResponse = JSON.parse(response);
+        parsedResponse = JSON.parse(jsonMatch[0]);
       } catch (parseError) {
-        console.error("JSON parsing failed:", parseError);
+        console.error("JSON parsing failed:", parseError, "Original response:", jsonMatch[0]);
         throw new Error("Invalid JSON structure in AI response");
       }
       
