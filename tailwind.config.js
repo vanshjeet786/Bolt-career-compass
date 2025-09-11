@@ -4,9 +4,14 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'poppins': ['Poppins', 'sans-serif'],
-        'montserrat': ['Montserrat', 'sans-serif'],
-        'exo': ['Exo', 'sans-serif'],
+        sans: ['"Noto Sans"', 'sans-serif'],
+        geo: ['Geo', 'sans-serif'],
+        electrolize: ['Electrolize', 'sans-serif'],
+        'nova-square': ['"Nova Square"', 'sans-serif'],
+        play: ['Play', 'sans-serif'],
+        'russo-one': ['"Russo One"', 'sans-serif'],
+        lexend: ['Lexend', 'sans-serif'],
+        montserrat: ['Montserrat', 'sans-serif'],
       },
       colors: {
         primary: {
