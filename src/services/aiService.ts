@@ -189,6 +189,32 @@ async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temp
 
 class AIService {
   private responseCache = new Map<string, any>();
+  
+  /**
+  * Extracts and safely parses the first valid JSON object from raw AI response text.
+  */
+  private _safeParseJSON(raw: string): any {
+      const firstBrace = raw.indexOf("{");
+      const lastBrace = raw.lastIndexOf("}");
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+          // If no JSON object is found, check for the original error from the user's log
+          if (raw.includes("Unexpected token '<'")) {
+              throw new Error("Malformed AI Response: " + raw);
+          }
+          throw new Error("No valid JSON object found in AI response");
+      }
+      let jsonString = raw.substring(firstBrace, lastBrace + 1);
+      // Attempt to remove trailing commas which can cause parsing errors
+      jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+      try {
+        return JSON.parse(jsonString);
+      } catch (e: any) {
+        // Throw a more informative error if parsing fails
+        e.message = `JSON parsing failed: ${e.message}\nOriginal response: ${raw}`;
+        throw e;
+      }
+  }
+
 
   async generateCareerRecommendations(
     scores: Record<string, number>,
