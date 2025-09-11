@@ -24,14 +24,38 @@ export const calculateScores = (allResponses: AssessmentResponse[]): Record<stri
 };
 
 export const generateCareerRecommendations = (scores: Record<string, number>): string[] => {
-  const recommendations: string[] = [];
+  let recommendations: Set<string> = new Set();
 
-  Object.entries(scores).forEach(([category, score]) => {
-    if (score >= 4.0 && CAREER_MAPPING[category]) {
-      recommendations.push(...CAREER_MAPPING[category]);
+  // Add recommendations based on high scores
+  Object.entries(scores)
+    .sort(([, a], [, b]) => b - a) // Sort by score descending
+    .forEach(([category, score]) => {
+      if (score >= 3.5 && CAREER_MAPPING[category]) {
+        CAREER_MAPPING[category].forEach(career => recommendations.add(career));
+      }
+    });
+
+  // If not enough recommendations, add some general ones to ensure we have at least 8
+  if (recommendations.size < 8) {
+    const generalCareers = [
+      'Software Developer',
+      'Project Manager',
+      'Marketing Manager',
+      'Data Analyst',
+      'Graphic Designer',
+      'Financial Advisor',
+      'Human Resources Manager',
+      'Registered Nurse',
+      'Content Creator',
+      'UX/UI Designer'
+    ];
+
+    for (const career of generalCareers) {
+      recommendations.add(career);
+      if (recommendations.size >= 8) break;
     }
-  });
+  }
 
-  // Remove duplicates and limit to top 10
-  return [...new Set(recommendations)].slice(0, 10);
+  // Convert set to array and limit to a reasonable number (e.g., 8-12)
+  return Array.from(recommendations).slice(0, 10);
 };
