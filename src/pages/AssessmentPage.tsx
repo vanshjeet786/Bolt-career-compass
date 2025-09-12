@@ -141,7 +141,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   }
 
   return (
-    <div className="min-h-screen bg-transparent py-8 relative">
+    <div className="min-h-screen bg-transparent relative flex items-center justify-center p-8">
       <DynamicBackground />
       <div className="container mx-auto px-4 relative">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

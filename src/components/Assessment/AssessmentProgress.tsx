@@ -23,7 +23,7 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
   const overallProgress = Math.min((totalCompleted / totalQuestions) * 100, 100);
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl p-6">
+    <div className="bg-white/30 backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center mb-4">
@@ -105,28 +105,12 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
                 }`}>
                   {layer.description}
                 </p>
-                
-                {/* Layer Progress Bar for Current Layer */}
-                {isCurrent && (
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs text-blue-600 mb-1">
-                      <span>Layer Progress</span>
-                      <span>{currentQuestionIndex} / {questionsPerLayer} questions</span>
-                    </div>
-                    <div className="w-full bg-blue-100 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min((currentQuestionIndex / questionsPerLayer) * 100, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
               
               {/* Connecting Line */}
               {index < layers.length - 1 && (
-                <div className={`absolute left-9 top-16 w-0.5 h-6 ${
-                  isCompleted ? 'bg-green-300' : 'bg-gray-300'
+                <div className={`absolute left-4 top-12 w-0.5 h-8 ${
+                  isCompleted ? 'bg-green-300' : 'bg-white/20'
                 }`}></div>
               )}
             </div>
@@ -135,21 +119,21 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
       </div>
       
       {/* Motivational Message */}
-      <div className="mt-8 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+      <div className="mt-6 bg-black/20 rounded-xl p-4">
         <div className="text-center">
-          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Star className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Star className="w-5 h-5 text-white" />
           </div>
-          <h4 className="font-bold text-purple-800 mb-2">
-            {overallProgress < 25 ? "Great start! You're building your career profile." :
-             overallProgress < 50 ? "Excellent progress! Keep discovering your strengths." :
-             overallProgress < 75 ? "You're doing amazing! Almost there." :
-             overallProgress < 100 ? "Final stretch! Your career insights await." :
-             "Congratulations! Your career analysis is complete."}
+          <h4 className="font-bold text-white mb-1">
+            {overallProgress < 25 ? "Great start!" :
+             overallProgress < 50 ? "Excellent progress!" :
+             overallProgress < 75 ? "You're doing amazing!" :
+             overallProgress < 100 ? "Final stretch!" :
+             "Congratulations!"}
           </h4>
-          <p className="text-sm text-purple-700">
-            {overallProgress < 100 ? "Each question brings you closer to discovering your ideal career path." :
-              "You've completed your comprehensive career assessment!"
+          <p className="text-xs text-gray-300">
+            {overallProgress < 100 ? "Each question brings you closer to your ideal career path." :
+              "You've completed your career assessment!"
             }
           </p>
         </div>

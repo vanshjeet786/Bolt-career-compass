@@ -97,11 +97,11 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Card className="mb-6" padding="lg">
+      <Card className="mb-6" padding="lg" backgroundOpacity={30}>
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2" style={{ fontFamily: headerFont }}>{layer.name}</h1>
-          <p className="text-gray-600 text-lg">{layer.description}</p>
-          <div className="mt-4 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: headerFont }}>{layer.name}</h1>
+          <p className="text-gray-300 text-lg">{layer.description}</p>
+          <div className="mt-4 text-sm text-gray-400">
             Question {currentQuestionIndex + 1} of {allQuestions.length}
           </div>
         </div>
