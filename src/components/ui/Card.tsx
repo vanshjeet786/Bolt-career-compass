@@ -7,9 +7,9 @@ interface CardProps {
   padding?: 'sm' | 'md' | 'lg';
 }
 
-export const Card: React.FC<CardProps> = ({
-  children,
-  className = '',
+export const Card: React.FC<CardProps> = ({ 
+  children, 
+  className = '', 
   hover = false,
   padding = 'md'
 }) => {

@@ -24,6 +24,7 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
 
   return (
     <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl shadow-xl p-8 mb-8 border border-blue-100">
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center mb-4">
@@ -147,6 +148,7 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
                     </div>
                     <div className="w-full bg-blue-100 rounded-full h-2">
                       <div
+
                         className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
                         style={{ width: `${Math.min((currentQuestionIndex / questionsPerLayer) * 100, 100)}%` }}
                       />
