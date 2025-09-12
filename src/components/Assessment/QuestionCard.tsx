@@ -152,10 +152,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   return (
-    <Card className="mb-6" padding="lg" backgroundOpacity={80}>
+    <Card className="mb-6" padding="lg">
       <div className="space-y-4">
         <div className="flex items-start justify-between">
-          <h3 className="text-lg font-semibold text-white flex-1 mr-4">
+          <h3 className="text-lg font-semibold text-gray-800 flex-1 mr-4">
             {question.text}
           </h3>
           <div className="flex gap-2 flex-shrink-0">
@@ -164,7 +164,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               size="sm"
               icon={HelpCircle}
               onClick={handleGetExplanation}
-              className="text-blue-300 hover:text-blue-100"
+              className="text-blue-600 hover:text-blue-800"
             >
               {showExplanation ? 'Hide' : 'Explain'}
             </Button>
@@ -175,7 +175,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 icon={Lightbulb}
                 onClick={handleGetSuggestion}
                 loading={loadingSuggestion}
-                className="text-orange-300 hover:text-orange-100"
+                className="text-orange-600 hover:text-orange-800"
               >
                 {showSuggestion ? 'Hide' : 'Suggest'}
               </Button>
@@ -186,7 +186,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 size="sm"
                 icon={Clock}
                 onClick={() => setShowHistory(!showHistory)}
-                className="text-gray-300 hover:text-gray-100"
+                className="text-gray-600 hover:text-gray-800"
               >
                 {showHistory ? 'Hide' : 'History'}
               </Button>
@@ -195,19 +195,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
 
         {showExplanation && explanation && (
-          <div className="bg-black/20 border-l-4 border-blue-400 p-4 rounded-r-lg">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
             <div className="flex items-start">
-              <HelpCircle className="w-5 h-5 text-blue-300 mt-0.5 mr-3 flex-shrink-0" />
+              <HelpCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-200 mb-1">Question Explanation</p>
-                <p className="text-gray-200 mb-3">{explanation}</p>
+                <p className="text-sm font-medium text-blue-900 mb-1">Question Explanation</p>
+                <p className="text-blue-800 mb-3">{explanation}</p>
                 <Button
                   variant="ghost"
                   size="sm"
                   icon={Sparkles}
                   onClick={handleGetDetailedExplanation}
                   loading={loadingDetailedExplanation}
-                  className="text-purple-300 hover:text-purple-100 text-xs"
+                  className="text-purple-600 hover:text-purple-800 text-xs"
                 >
                   {showDetailedExplanation ? 'Hide Detailed' : 'Explain More'}
                 </Button>
@@ -217,24 +217,24 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         )}
 
         {showDetailedExplanation && detailedExplanation && (
-          <div className="bg-black/20 border-l-4 border-purple-400 p-4 rounded-r-lg ml-4">
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-500 p-4 rounded-r-lg ml-4">
             <div className="flex items-start">
-              <Sparkles className="w-5 h-5 text-purple-300 mt-0.5 mr-3 flex-shrink-0" />
+              <Sparkles className="w-5 h-5 text-purple-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-purple-200 mb-1">AI-Powered Detailed Explanation</p>
-                <p className="text-gray-200">{detailedExplanation}</p>
+                <p className="text-sm font-medium text-purple-900 mb-1">AI-Powered Detailed Explanation</p>
+                <p className="text-purple-800">{detailedExplanation}</p>
               </div>
             </div>
           </div>
         )}
 
         {showSuggestion && suggestions.length > 0 && (
-          <div className="bg-black/20 border-l-4 border-orange-400 p-4 rounded-r-lg">
+          <div className="bg-gradient-to-r from-orange-50 to-pink-50 border-l-4 border-secondary-500 p-4 rounded-r-lg">
             <div className="flex items-start">
-              <Lightbulb className="w-5 h-5 text-orange-300 mt-0.5 mr-3 flex-shrink-0" />
+              <Lightbulb className="w-5 h-5 text-secondary-600 mt-0.5 mr-3 flex-shrink-0" />
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-orange-200">
+                  <p className="text-sm font-medium text-secondary-900">
                     Personalized AI Suggestions ({suggestions.length})
                   </p>
                   {suggestions.length > 1 && (
@@ -242,28 +242,28 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       <button
                         onClick={() => setSelectedSuggestionIndex(Math.max(0, selectedSuggestionIndex - 1))}
                         disabled={selectedSuggestionIndex === 0}
-                        className="p-1 rounded-full hover:bg-white/10 disabled:opacity-50 transition-colors"
+                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50 transition-colors"
                       >
-                        <ChevronUp className="w-4 h-4 text-orange-300" />
+                        <ChevronUp className="w-4 h-4 text-secondary-600" />
                       </button>
-                      <span className="text-xs text-orange-200 font-medium">
+                      <span className="text-xs text-secondary-700 font-medium">
                         {selectedSuggestionIndex + 1}/{suggestions.length}
                       </span>
                       <button
                         onClick={() => setSelectedSuggestionIndex(Math.min(suggestions.length - 1, selectedSuggestionIndex + 1))}
                         disabled={selectedSuggestionIndex === suggestions.length - 1}
-                        className="p-1 rounded-full hover:bg-white/10 disabled:opacity-50 transition-colors"
+                        className="p-1 rounded-full hover:bg-secondary-100 disabled:opacity-50 transition-colors"
                       >
-                        <ChevronDown className="w-4 h-4 text-orange-300" />
+                        <ChevronDown className="w-4 h-4 text-secondary-600" />
                       </button>
                     </div>
                   )}
                 </div>
-                <div className="bg-black/20 p-3 rounded-lg mb-2 border border-white/10">
-                  <p className="text-gray-200 leading-relaxed">{suggestions[selectedSuggestionIndex]}</p>
+                <div className="bg-white p-3 rounded-lg mb-2 border border-secondary-200">
+                  <p className="text-secondary-800 leading-relaxed">{suggestions[selectedSuggestionIndex]}</p>
                 </div>
                 {suggestionExplanation && (
-                  <p className="text-xs text-gray-400 italic">{suggestionExplanation}</p>
+                  <p className="text-xs text-secondary-700 italic">{suggestionExplanation}</p>
                 )}
               </div>
             </div>
@@ -271,11 +271,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         )}
 
         {showHistory && (
-          <div className="bg-black/20 border-l-4 border-gray-400 p-4 rounded-r-lg">
+          <div className="bg-gray-50 border-l-4 border-gray-400 p-4 rounded-r-lg">
             <div className="flex items-start">
-              <Clock className="w-5 h-5 text-gray-300 mt-0.5 mr-3 flex-shrink-0" />
+              <Clock className="w-5 h-5 text-gray-600 mt-0.5 mr-3 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-200 mb-2">Answer History</p>
+                <p className="text-sm font-medium text-gray-900 mb-2">Answer History</p>
                 <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
                   {previousAssessments.map((assessment: Assessment, index: number) => {
                     const historyResponse = assessment.responses.find(r => r.questionId === question.id);
@@ -283,11 +283,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
                     return (
                       <div key={assessment.id} className="text-sm">
-                        <p className="font-semibold text-gray-300">
+                        <p className="font-semibold text-gray-700">
                           Assessment #{previousAssessments.length - index}
-                          <span className="font-normal text-gray-400 ml-2">({new Date(assessment.completedAt).toLocaleDateString()})</span>
+                          <span className="font-normal text-gray-500 ml-2">({new Date(assessment.completedAt).toLocaleDateString()})</span>
                         </p>
-                        <p className="bg-black/20 p-2 mt-1 rounded border border-white/10 text-gray-200 whitespace-pre-wrap">
+                        <p className="bg-white p-2 mt-1 rounded border border-gray-200 text-gray-800 whitespace-pre-wrap">
                           {historyResponse.response}
                         </p>
                       </div>
@@ -305,10 +305,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               <button
                 key={option.value}
                 onClick={() => onAnswer(question.id, option.value)}
-                className={`p-3 text-sm rounded-lg border transition-all duration-200 ${
+                className={`p-3 text-sm rounded-lg border-2 transition-all duration-200 hover:scale-105 ${
                   currentAnswer === option.value
-                    ? 'border-blue-400 bg-blue-500/30 text-white shadow-lg'
-                    : 'border-white/20 text-gray-200 hover:bg-white/10 hover:border-white/40'
+                    ? 'border-primary-600 bg-gradient-to-r from-primary-50 to-purple-50 text-primary-800 shadow-lg'
+                    : previousResponse === option.value
+                    ? 'bg-blue-100 border-blue-200'
+                    : 'border-gray-200 hover:border-primary-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-primary-50'
                 }`}
               >
                 {option.label}
@@ -317,18 +319,18 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </div>
         ) : question.id === 'l6-synth-4' ? (
           <div className="space-y-4 mt-6">
-            <p className="text-sm text-gray-300 mb-4">Please list your top 3 career interest areas:</p>
+            <p className="text-sm text-gray-600 mb-4">Please list your top 3 career interest areas:</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {careerInputs.map((value, index) => (
                 <div key={index} className="space-y-2">
-                  <label className="text-sm font-medium text-gray-200">
+                  <label className="text-sm font-medium text-gray-700">
                     Career {index + 1}
                   </label>
                   <input
                     type="text"
                     value={value}
                     onChange={(e) => handleCareerInputChange(index, e.target.value)}
-                    className="w-full p-3 bg-black/20 border border-white/20 rounded-lg text-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/50 transition-all duration-200"
+                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all duration-200"
                     placeholder={`Enter career area ${index + 1}`}
                   />
                 </div>
@@ -339,7 +341,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <textarea
             value={currentAnswer as string || ''}
             onChange={(e) => onAnswer(question.id, e.target.value)}
-            className="w-full p-4 bg-black/20 border border-white/20 rounded-lg text-white focus:border-blue-400 focus:ring-2 focus:ring-blue-400/50 transition-all duration-200 resize-none"
+            className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all duration-200 resize-none"
             rows={4}
             placeholder="Share your thoughts here..."
           />
