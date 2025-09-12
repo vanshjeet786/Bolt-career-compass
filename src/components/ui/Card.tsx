@@ -5,15 +5,13 @@ interface CardProps {
   className?: string;
   hover?: boolean;
   padding?: 'sm' | 'md' | 'lg';
-  backgroundOpacity?: number; // 0-100
 }
 
-export const Card: React.FC<CardProps> = ({
-  children,
-  className = '',
+export const Card: React.FC<CardProps> = ({ 
+  children, 
+  className = '', 
   hover = false,
-  padding = 'md',
-  backgroundOpacity = 10,
+  padding = 'md'
 }) => {
   const paddingClasses = {
     sm: 'p-4',
@@ -24,10 +22,7 @@ export const Card: React.FC<CardProps> = ({
   const hoverClasses = hover ? 'hover:shadow-2xl hover:border-white/30 transition-all duration-300' : '';
   
   return (
-    <div
-      className={`backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl ${paddingClasses[padding]} ${hoverClasses} ${className}`}
-      style={{ backgroundColor: `rgba(255, 255, 255, ${backgroundOpacity / 100})` }}
-    >
+    <div className={`bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-xl ${paddingClasses[padding]} ${hoverClasses} ${className}`}>
       {children}
     </div>
   );
