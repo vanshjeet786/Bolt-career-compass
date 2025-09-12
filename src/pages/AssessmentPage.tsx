@@ -144,9 +144,9 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
     <div className="min-h-screen bg-transparent relative flex items-center justify-center p-8">
       <DynamicBackground />
       <div className="container mx-auto px-4 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="relative grid grid-cols-12">
           {/* Progress Sidebar */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-start-1 lg:col-span-5 z-10 pt-16">
             <AssessmentProgress
               layers={ASSESSMENT_LAYERS}
               currentLayerIndex={currentLayerIndex}
@@ -157,7 +157,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
           </div>
 
           {/* Assessment Content */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-start-4 lg:col-span-9 z-20">
             <AssessmentLayerComponent
               layer={currentLayer}
               responses={layerResponses}
