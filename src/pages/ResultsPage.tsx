@@ -3,6 +3,7 @@ import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp,
 import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/Accordion';
 import { ResultsChart } from '../components/Results/ResultsChart';
