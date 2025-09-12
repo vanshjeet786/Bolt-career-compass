@@ -142,8 +142,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
     let careers = generateCareerRecommendations();
 
     if (filterBy === 'high-growth') {
-      careers = careers.filter(career => 
-        career.outlook.toLowerCase().includes('excellent') || 
+      careers = careers.filter(career =>
+        career.outlook.toLowerCase().includes('excellent') ||
         career.outlook.toLowerCase().includes('very good')
       );
     } else if (filterBy === 'high-salary') {
@@ -152,7 +152,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
         return salaryMatch && parseInt(salaryMatch[1]) >= 80;
       });
     }
-    
+
     careers.sort((a, b) => {
       switch (sortBy) {
         case 'match':
@@ -186,7 +186,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
 
   const generateAIResults = async () => {
     if (aiEnhancedResults || aiLoading) return;
-    
+
     setAiLoading(true);
 
     try {
@@ -225,7 +225,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
     const lastScores = lastAssessment.scores as Record<string, number>;
     const improvements = [];
     const declines = [];
-    
+
     Object.entries(numericalScores).forEach(([category, currentScore]) => {
       const previousScore = lastScores[category];
       if (previousScore) {
@@ -256,11 +256,11 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           <p className="text-xl text-gray-600 mb-6">
             Congratulations, {user.name}! Here's your personalized career guidance.
           </p>
-  
+
           {progressAnalysis && (
             <div className="bg-gradient-to-r from-vibrant-100 to-primary-100 rounded-lg p-4 mb-6 inline-block">
               <p className="text-vibrant-800 font-medium">
-                Assessment #{progressAnalysis.totalAssessments} • 
+                Assessment #{progressAnalysis.totalAssessments} •
                 {progressAnalysis.improvements.length > 0 && (
                   <span className="text-vibrant-600"> {progressAnalysis.improvements.length} areas improved</span>
                 )}
@@ -375,7 +375,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                 {/* Detailed Analysis by Category */}
                 <div className="space-y-6">
                   <h2 className="text-3xl font-bold text-gray-800 mb-6">Detailed Analysis by Category</h2>
-                  
+
                   {/* Intelligence Analysis */}
                   <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
                     <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center">
@@ -393,7 +393,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                               <span className="text-blue-600 font-bold">{(score as number).toFixed(1)}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-500"
                                 style={{ width: `${((score as number) / 5) * 100}%` }}
                               />
@@ -420,7 +420,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                               <span className="text-purple-600 font-bold">{(score as number).toFixed(1)}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
+                              <div
                                 className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full transition-all duration-500"
                                 style={{ width: `${((score as number) / 5) * 100}%` }}
                               />
@@ -438,7 +438,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                 {/* Progress Tracking */}
                 <div className="space-y-6">
                   <h2 className="text-3xl font-bold text-gray-800 mb-6">Progress Tracking</h2>
-                  
+
                   {progressAnalysis ? (
                     <>
                       <Card className="bg-gradient-to-r from-vibrant-50 to-green-50 border-vibrant-200">
@@ -491,7 +491,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
               <h2 className="text-3xl font-bold text-gray-800 mb-6">
                 Recommended Career Paths
               </h2>
-              
+
               {/* Enhanced Filters and Sorting */}
               <div className="flex flex-wrap gap-4 items-center justify-between bg-white p-6 rounded-xl shadow-lg">
                 <div className="flex items-center gap-4">
@@ -507,7 +507,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                       <option value="high-salary">High Salary ($80k+)</option>
                     </select>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <ArrowUpDown className="w-4 h-4 text-gray-600" />
                     <select
@@ -521,18 +521,18 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="text-sm text-gray-600 bg-primary-50 px-3 py-1 rounded-full">
                   Showing {careerRecommendations.length} career{careerRecommendations.length !== 1 ? 's' : ''}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {careerRecommendations.map((career, index) => (
                   <CareerCard key={index} career={career} />
                 ))}
               </div>
-              
+
               {/* Enhanced Next Steps Section */}
               <div className="bg-gradient-to-r from-primary-50 via-purple-50 to-secondary-50 p-8 rounded-2xl">
                 <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">Ready to Take Action?</h3>
@@ -551,7 +551,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                       <p className="text-sm text-gray-600">Search for opportunities</p>
                     </div>
                   </a>
-                  
+
                   <a
                     href="https://www.coursera.org/"
                     target="_blank"
@@ -566,7 +566,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                       <p className="text-sm text-gray-600">Take online courses</p>
                     </div>
                   </a>
-                  
+
                   <a
                     href="https://www.mentorship.com/"
                     target="_blank"
@@ -590,7 +590,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
             <p className="text-gray-700 leading-relaxed">
               <strong>About Your Results:</strong> The above results are calculated using your quantitative responses from Layers 1-5 (Multiple Intelligences, Personality Traits, Aptitudes & Skills, Background & Environment, and Interests & Values).
-              Layer 6's open-ended responses have been used qualitatively to inform and train the AI for more personalized 
+              Layer 6's open-ended responses have been used qualitatively to inform and train the AI for more personalized
               guidance in the chat section and enhanced analysis below.
             </p>
           </div>
@@ -890,6 +890,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                       </p>
                     </div>
                   )}
+                </div>
               </ModalAccordionContent>
             </ModalAccordionItem>
           </ModalAccordion>
@@ -898,12 +899,12 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           <div className="lg:col-span-1 space-y-6">
             <div className="sticky top-8">
               {showChat ? (
-                <AIChat 
+                <AIChat
                   userResults={{
                     scores: numericalScores,
                     careers: assessment.recommendedCareers,
                     previousAssessments
-                  }} 
+                  }}
                 />
               ) : (
                 <Card className="text-center bg-gradient-to-br from-primary-50 to-purple-50 border-primary-200">
