@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2 } from 'lucide-react';
 import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
-import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../components/ui/Modal';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/Accordion';
 import { ResultsChart } from '../components/Results/ResultsChart';
@@ -598,8 +597,10 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           <Modal
             isOpen={isAiModalOpen}
             onClose={() => {
-              setIsAiModalOpen(false);
               handleModalClose();
+              setTimeout(() => {
+                setIsAiModalOpen(false);
+              }, 300); // Allow time for scroll animation
             }}
           >
             <div className="text-white p-2">
