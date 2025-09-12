@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { ASSESSMENT_LAYERS } from '../data/assessmentLayers';
+import DynamicBackground from '../components/Layout/DynamicBackground';
 import { AssessmentProgress } from '../components/Assessment/AssessmentProgress';
 import { AssessmentLayerComponent } from '../components/Assessment/AssessmentLayer';
 import { AssessmentResponse, Assessment, User } from '../types';
 import { calculateScores, generateCareerRecommendations } from '../services/assessmentService';
+
+const headerFonts = [
+  'Geo, sans-serif',
+  'Electrolize, sans-serif',
+  '"Nova Square", sans-serif',
+  'Play, sans-serif',
+  '"Russo One", sans-serif',
+  'Lexend, sans-serif',
+  'Montserrat, sans-serif',
+];
 
 interface AssessmentPageProps {
   user: User;
@@ -27,11 +38,17 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   };
 
   const initialState = getInitialState();
-
   const [currentLayerIndex, setCurrentLayerIndex] = useState(initialState?.currentLayerIndex || 0);
   const [responses, setResponses] = useState<AssessmentResponse[]>(initialState?.responses || []);
   const [completedLayers, setCompletedLayers] = useState<string[]>(initialState?.completedLayers || []);
   const [scores, setScores] = useState<Record<string, number>>(initialState?.scores || {});
+  const [headerFont, setHeaderFont] = useState('');
+
+  useEffect(() => {
+    // Select a random font on component mount
+    const randomFont = headerFonts[Math.floor(Math.random() * headerFonts.length)];
+    setHeaderFont(randomFont);
+  }, []); // Empty dependency array ensures this runs only once
 
   useEffect(() => {
     const inProgressData = {
@@ -40,12 +57,11 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
       completedLayers,
       scores,
     };
+
     localStorage.setItem(`inProgressAssessment_${user.id}`, JSON.stringify(inProgressData));
   }, [currentLayerIndex, responses, completedLayers, scores, user.id]);
-
   const currentLayer = ASSESSMENT_LAYERS[currentLayerIndex];
   const layerResponses = responses.filter(r => r.layerId === currentLayer?.id);
-
   const previousAnswers = React.useMemo(() => {
     if (!previousAssessments || previousAssessments.length === 0) {
       return new Map<string, any>();
@@ -54,16 +70,13 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
     const mostRecentAssessment = previousAssessments[0];
     return new Map(mostRecentAssessment.responses.map(r => [r.questionId, r.response]));
   }, [previousAssessments]);
-
   // Calculate total questions for progress tracking
   const totalQuestions = ASSESSMENT_LAYERS.reduce((total, layer) => {
     return total + Object.values(layer.categories).reduce((layerTotal, questions) => {
       return layerTotal + questions.length;
     }, 0);
   }, 0);
-
   const currentQuestionIndex = layerResponses.length;
-
   const handleAnswer = (response: AssessmentResponse) => {
     setResponses(prev => {
       // Remove existing response for this question if any
@@ -72,7 +85,6 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
     });
   };
 
-
   const handleLayerComplete = () => {
     const updatedCompletedLayers = [...completedLayers, currentLayer.id];
     setCompletedLayers(updatedCompletedLayers);
@@ -80,14 +92,12 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
     // Update scores with current responses
     const newScores = calculateScores(responses);
     setScores(newScores);
-
     if (currentLayerIndex < ASSESSMENT_LAYERS.length - 1) {
       setCurrentLayerIndex(prev => prev + 1);
     } else {
       // Assessment complete
       const finalScores = calculateScores(responses);
       const recommendedCareers = generateCareerRecommendations(finalScores);
-
       const assessment: Assessment = {
         id: Date.now().toString(),
         userId: user.id,
@@ -123,8 +133,9 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-transparent py-8 relative">
+      <DynamicBackground />
+      <div className="container mx-auto px-4 relative">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Progress Sidebar */}
           <div className="lg:col-span-1">
@@ -136,7 +147,6 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               completedLayers={completedLayers}
             />
           </div>
-
           {/* Assessment Content */}
           <div className="lg:col-span-3">
             <AssessmentLayerComponent
@@ -150,6 +160,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               previousAssessments={previousAssessments}
               allUserResponses={responses}
               previousAnswers={previousAnswers}
+              headerFont={headerFont}
             />
           </div>
         </div>
