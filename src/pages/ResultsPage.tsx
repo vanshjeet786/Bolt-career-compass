@@ -52,43 +52,6 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   const handleModalClose = () => {
     aiAnalysisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
-  // Save assessment to Supabase on component mount
-  useEffect(() => {
-    const saveAssessment = async () => {
-      try {
-        const { data: assessmentData, error: assessmentError } = await supabase
-          .from('assessments')
-          .insert({
-            user_id: user.id,
-            current_layer: 6,
-            status: 'completed',
-            completed_at: assessment.completedAt.toISOString(),
-            scores: assessment.scores,
-            recommended_careers: assessment.recommendedCareers,
-            ml_prediction: assessment.mlPrediction
-          })
-          .select()
-          .single();
-        if (assessmentError) throw assessmentError;
-        const responsesToSave = assessment.responses.map(response => ({
-          assessment_id: assessmentData.id,
-          layer_number: parseInt(response.layerId.replace('layer', '')),
-          question_id: response.questionId,
-          question_text: response.questionText,
-          response_value: response.response,
-          category_id: response.categoryId
-        }));
-        const { error: responsesError } = await supabase
-          .from('assessment_responses')
-          .insert(responsesToSave);
-        if (responsesError) throw responsesError;
-        console.log('Assessment saved successfully');
-      } catch (error) {
-        console.error('Failed to save assessment:', error);
-      }
-    };
-    saveAssessment();
-  }, [assessment, user.id]);
   useEffect(() => {
     const generateInsights = async () => {
       try {

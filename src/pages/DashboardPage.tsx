@@ -201,7 +201,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             Assessment #{filteredAssessments.length - index}
                           </h3>
                           <p className="text-sm text-gray-600">
-                            Completed on {new Date(assessment.completedAt).toLocaleDateString()}
+                            Completed on {assessment.completedAt.toLocaleDateString()}
                           </p>
                           <p className="text-xs text-primary-600">
                             {assessment.recommendedCareers.length} career matches found
