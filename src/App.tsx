@@ -172,7 +172,7 @@ function App() {
     logout();
   };
 
-  // Check for existing session on app load
+  // Check for existing session on app load and listen for auth changes
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -196,22 +196,31 @@ function App() {
       }
     };
 
-    getSession();
+    // On initial mount, get the session if no user is present.
+    if (!user) {
+      getSession();
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        const userIsPresent = !!user;
+
         if (event === 'SIGNED_IN' && session?.user) {
-          const user = {
+          const newUser = {
             id: session.user.id,
             name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
             email: session.user.email || '',
             createdAt: new Date(session.user.created_at),
             assessments: []
           };
-          setUser(user);
-          loadUserAssessments(user.id);
-          setCurrentState('dashboard');
+          setUser(newUser);
+          await loadUserAssessments(newUser.id);
+
+          // Only redirect to dashboard if user was not previously logged in
+          if (!userIsPresent) {
+            setCurrentState('dashboard');
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setCurrentAssessment(null);
@@ -222,7 +231,7 @@ function App() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleAssessmentComplete = async (assessment: Assessment) => {
     setCurrentAssessment(assessment);

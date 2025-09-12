@@ -194,7 +194,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                               Assessment #{assessments.length - index}
                             </h4>
                             <p className="text-sm text-gray-600">
-                              Completed on {new Date(assessment.completedAt).toLocaleDateString()}
+                              Completed on {assessment.completedAt.toLocaleDateString()}
                             </p>
                             <p className="text-xs text-primary-600">
                               {assessment.recommendedCareers.length} career matches
