@@ -24,13 +24,13 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   type = 'button'
 }) => {
-  const baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm rounded-md transform hover:-translate-y-px',
-    secondary: 'bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500 shadow-sm rounded-md',
-    outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-primary-500 rounded-md',
-    ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-primary-500 rounded-md',
+    primary: 'bg-gradient-to-r from-primary-600 to-purple-600 text-white hover:from-primary-700 hover:to-purple-700 focus:ring-primary-500 shadow-lg hover:shadow-xl hover:scale-105',
+    secondary: 'bg-gradient-to-r from-secondary-500 to-accent-500 text-white hover:from-secondary-600 hover:to-accent-600 focus:ring-secondary-500 shadow-lg hover:shadow-xl hover:scale-105',
+    outline: 'border-2 border-primary-600 text-primary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 focus:ring-primary-500',
+    ghost: 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-100 hover:to-primary-50 focus:ring-gray-500'
   };
   
   const sizeClasses = {

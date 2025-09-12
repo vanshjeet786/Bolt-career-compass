@@ -1,21 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { ASSESSMENT_LAYERS } from '../data/assessmentLayers';
-import DynamicBackground from '../components/Layout/DynamicBackground';
 import { AssessmentProgress } from '../components/Assessment/AssessmentProgress';
 import { AssessmentLayerComponent } from '../components/Assessment/AssessmentLayer';
 import { AssessmentResponse, Assessment, User } from '../types';
 import { calculateScores, generateCareerRecommendations } from '../services/assessmentService';
-
-const headerFonts = [
-  'Geo, sans-serif',
-  'Electrolize, sans-serif',
-  '"Nova Square", sans-serif',
-  'Play, sans-serif',
-  '"Russo One", sans-serif',
-  'Lexend, sans-serif',
-  'Montserrat, sans-serif',
-];
 
 interface AssessmentPageProps {
   user: User;
@@ -43,13 +32,6 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   const [responses, setResponses] = useState<AssessmentResponse[]>(initialState?.responses || []);
   const [completedLayers, setCompletedLayers] = useState<string[]>(initialState?.completedLayers || []);
   const [scores, setScores] = useState<Record<string, number>>(initialState?.scores || {});
-  const [headerFont, setHeaderFont] = useState('');
-
-  useEffect(() => {
-    // Select a random font on component mount
-    const randomFont = headerFonts[Math.floor(Math.random() * headerFonts.length)];
-    setHeaderFont(randomFont);
-  }, []); // Empty dependency array ensures this runs only once
 
   useEffect(() => {
     const inProgressData = {
@@ -141,12 +123,11 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   }
 
   return (
-    <div className="min-h-screen bg-transparent relative flex items-center justify-center p-8">
-      <DynamicBackground />
-      <div className="container mx-auto px-4 relative">
-        <div className="relative grid grid-cols-12">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Progress Sidebar */}
-          <div className="lg:col-start-1 lg:col-span-5 z-10 pt-16">
+          <div className="lg:col-span-1">
             <AssessmentProgress
               layers={ASSESSMENT_LAYERS}
               currentLayerIndex={currentLayerIndex}
@@ -157,7 +138,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
           </div>
 
           {/* Assessment Content */}
-          <div className="lg:col-start-4 lg:col-span-9 z-20">
+          <div className="lg:col-span-3">
             <AssessmentLayerComponent
               layer={currentLayer}
               responses={layerResponses}
@@ -169,7 +150,6 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               previousAssessments={previousAssessments}
               allUserResponses={responses}
               previousAnswers={previousAnswers}
-              headerFont={headerFont}
             />
           </div>
         </div>

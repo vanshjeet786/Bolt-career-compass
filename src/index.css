@@ -1,6 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --font-poppins: 'Poppins', sans-serif;
+  --font-montserrat: 'Montserrat', sans-serif;
+  --font-exo: 'Exo', sans-serif;
+}
 
 * {
   box-sizing: border-box;
@@ -9,6 +19,7 @@
 }
 
 body {
+  font-family: var(--font-poppins);
   line-height: 1.6;
   color: #1f2937;
   background-color: #f9fafb;
@@ -17,8 +28,13 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-montserrat);
   font-weight: 600;
   line-height: 1.2;
+}
+
+.font-exo {
+  font-family: var(--font-exo);
 }
 
 /* Custom scrollbar */

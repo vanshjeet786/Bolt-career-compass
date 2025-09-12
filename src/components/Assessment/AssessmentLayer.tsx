@@ -16,7 +16,6 @@ interface AssessmentLayerProps {
   previousAssessments?: any[];
   allUserResponses?: AssessmentResponse[];
   previousAnswers?: Map<string, any>;
-  headerFont?: string;
 }
 
 export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
@@ -29,8 +28,7 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
   careers,
   previousAssessments,
   allUserResponses,
-  previousAnswers,
-  headerFont,
+  previousAnswers
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -97,11 +95,11 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Card className="mb-6" padding="lg" backgroundOpacity={30}>
+      <Card className="mb-6" padding="lg">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: headerFont }}>{layer.name}</h1>
-          <p className="text-gray-300 text-lg">{layer.description}</p>
-          <div className="mt-4 text-sm text-gray-400">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">{layer.name}</h1>
+          <p className="text-gray-600 text-lg">{layer.description}</p>
+          <div className="mt-4 text-sm text-gray-500">
             Question {currentQuestionIndex + 1} of {allQuestions.length}
           </div>
         </div>
