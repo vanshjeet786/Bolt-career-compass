@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './services/supabaseClient';
 import { Header } from './components/Layout/Header';
 import { AuthModal } from './components/Auth/AuthModal';
@@ -27,6 +27,12 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [userAssessments, setUserAssessments] = useState<Assessment[]>([]);
+
+  // Create a ref to hold the user object to prevent stale closures in subscriptions
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   // Load user assessments from Supabase
   const loadUserAssessments = async (userId: string) => {
@@ -93,10 +99,10 @@ function App() {
     }
   };
 
-  const saveAssessment = async (assessment: Assessment, userId: string) => {
+  const saveAssessment = async (assessment: Assessment, userId: string): Promise<Assessment | null> => {
     try {
-      // 1. Save the main assessment record
-      const { data: assessmentRecord, error: assessmentError } = await supabase
+      // 1. Save the main assessment record and get the full record back
+      const { data: savedAssessment, error: assessmentError } = await supabase
         .from('assessments')
         .insert({
           user_id: userId,
@@ -106,13 +112,13 @@ function App() {
           ml_prediction: assessment.mlPrediction,
           status: 'completed'
         })
-        .select('id')
+        .select('*')
         .single();
 
       if (assessmentError) throw assessmentError;
-      if (!assessmentRecord) throw new Error("Failed to create assessment record.");
+      if (!savedAssessment) throw new Error("Failed to create assessment record.");
 
-      const assessmentId = assessmentRecord.id;
+      const assessmentId = savedAssessment.id;
 
       // 2. Prepare and save all the assessment responses
       const responsesToInsert = assessment.responses.map(response => ({
@@ -131,11 +137,16 @@ function App() {
       if (responsesError) throw responsesError;
 
       console.log('Assessment saved successfully!');
-      return { success: true };
+      // Return the full assessment object, which now includes the database ID
+      return {
+        ...assessment,
+        id: savedAssessment.id,
+        completedAt: new Date(savedAssessment.completed_at),
+      };
 
     } catch (error) {
       console.error('Error saving assessment:', error);
-      return { success: false, error };
+      return null;
     }
   };
 
@@ -172,7 +183,7 @@ function App() {
     logout();
   };
 
-  // Check for existing session on app load and listen for auth changes
+  // Check for existing session on app load
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -196,29 +207,24 @@ function App() {
       }
     };
 
-    // On initial mount, get the session if no user is present.
-    if (!user) {
-      getSession();
-    }
+    getSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        const userIsPresent = !!user;
-
         if (event === 'SIGNED_IN' && session?.user) {
-          const newUser = {
-            id: session.user.id,
-            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-            email: session.user.email || '',
-            createdAt: new Date(session.user.created_at),
-            assessments: []
-          };
-          setUser(newUser);
-          await loadUserAssessments(newUser.id);
-
-          // Only redirect to dashboard if user was not previously logged in
-          if (!userIsPresent) {
+          // A SIGNED_IN event can fire on token refresh. To prevent redirecting the user
+          // from a page they are on, we only set state to dashboard if it's a new user.
+          if (session.user.id !== userRef.current?.id) {
+            const newUser = {
+              id: session.user.id,
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              email: session.user.email || '',
+              createdAt: new Date(session.user.created_at),
+              assessments: []
+            };
+            setUser(newUser);
+            await loadUserAssessments(newUser.id);
             setCurrentState('dashboard');
           }
         } else if (event === 'SIGNED_OUT') {
@@ -231,19 +237,26 @@ function App() {
     );
 
     return () => subscription.unsubscribe();
-  }, [user]);
+  }, []);
 
   const handleAssessmentComplete = async (assessment: Assessment) => {
-    setCurrentAssessment(assessment);
-
     if (user) {
-      const { success } = await saveAssessment(assessment, user.id);
-      if (success) {
-        // Reload assessments from the database to ensure consistency
+      const savedAssessmentWithId = await saveAssessment(assessment, user.id);
+
+      if (savedAssessmentWithId) {
+        // Set the current assessment to the one returned from the DB, which includes the ID
+        setCurrentAssessment(savedAssessmentWithId);
+        // Reload the full list of assessments to ensure UI consistency
         await loadUserAssessments(user.id);
+      } else {
+        // Handle the case where the assessment fails to save
+        console.error("Could not save assessment. Cannot proceed to results.");
+        // Optionally, show an error message to the user here
+        return;
       }
     } else {
-      // If there's no user, just update local state for the session
+      // For non-logged-in users, the assessment is not saved and won't have an ID
+      setCurrentAssessment(assessment);
       setUserAssessments(prev => [...prev, assessment]);
     }
 
