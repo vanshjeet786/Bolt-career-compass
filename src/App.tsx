@@ -12,14 +12,6 @@ import { calculateScores, generateCareerRecommendations } from './services/asses
 
 type AppState = 'landing' | 'dashboard' | 'assessment' | 'results';
 
-interface SupabaseResponse {
-  layer_number: number;
-  category_id: string;
-  question_id: string;
-  question_text: string;
-  response_value: number | string | string[];
-}
-
 function App() {
   const [currentState, setCurrentState] = useState<AppState>('landing');
   const [user, setUser] = useState<User | null>(null);
@@ -27,6 +19,7 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [userAssessments, setUserAssessments] = useState<Assessment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Create a ref to hold the user object to prevent stale closures in subscriptions
   const userRef = useRef(user);
@@ -185,36 +178,32 @@ function App() {
 
   // Check for existing session on app load
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const user = {
-          id: session.user.id,
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-          email: session.user.email || '',
-          createdAt: new Date(session.user.created_at),
-          assessments: []
-        };
-        setUser(user);
-        await loadUserAssessments(user.id);
-
-        const inProgressAssessment = localStorage.getItem(`inProgressAssessment_${user.id}`);
-        if (inProgressAssessment) {
-          setCurrentState('assessment');
-        } else {
-          setCurrentState('dashboard');
-        }
-      }
-    };
-
-    getSession();
-
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          // A SIGNED_IN event can fire on token refresh. To prevent redirecting the user
-          // from a page they are on, we only set state to dashboard if it's a new user.
+        if (event === 'INITIAL_SESSION') {
+          if (session?.user) {
+            const user = {
+              id: session.user.id,
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              email: session.user.email || '',
+              createdAt: new Date(session.user.created_at),
+              assessments: []
+            };
+            setUser(user);
+            await loadUserAssessments(user.id);
+            const inProgressAssessment = localStorage.getItem(`inProgressAssessment_${user.id}`);
+            if (inProgressAssessment) {
+              setCurrentState('assessment');
+            } else {
+              setCurrentState('dashboard');
+            }
+          } else {
+            // No user session on initial load
+            setCurrentState('landing');
+          }
+          setIsLoading(false);
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          // This handles login events after the initial load.
           if (session.user.id !== userRef.current?.id) {
             const newUser = {
               id: session.user.id,
@@ -236,7 +225,9 @@ function App() {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleAssessmentComplete = async (assessment: Assessment) => {
@@ -304,34 +295,42 @@ function App() {
       />
 
       <main>
-        {currentState === 'landing' && (
-          <LandingPage onGetStarted={handleGetStarted} />
-        )}
+        {isLoading ? (
+          <div className="flex justify-center items-center h-screen">
+            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-600"></div>
+          </div>
+        ) : (
+          <>
+            {currentState === 'landing' && (
+              <LandingPage onGetStarted={handleGetStarted} />
+            )}
 
-        {currentState === 'dashboard' && user && (
-          <DashboardPage
-            user={user}
-            assessments={userAssessments}
-            onStartNewAssessment={handleStartNewAssessment}
-            onResumeAssessment={handleResumeAssessment}
-            onViewResults={handleViewResults}
-          />
-        )}
+            {currentState === 'dashboard' && user && (
+              <DashboardPage
+                user={user}
+                assessments={userAssessments}
+                onStartNewAssessment={handleStartNewAssessment}
+                onResumeAssessment={handleResumeAssessment}
+                onViewResults={handleViewResults}
+              />
+            )}
 
-        {currentState === 'assessment' && user && (
-          <AssessmentPage
-            user={user}
-            onComplete={handleAssessmentComplete}
-            previousAssessments={userAssessments}
-          />
-        )}
+            {currentState === 'assessment' && user && (
+              <AssessmentPage
+                user={user}
+                onComplete={handleAssessmentComplete}
+                previousAssessments={userAssessments}
+              />
+            )}
 
-        {currentState === 'results' && currentAssessment && user && (
-          <ResultsPage
-            assessment={currentAssessment}
-            user={user}
-            previousAssessments={userAssessments.slice(0, -1)}
-          />
+            {currentState === 'results' && currentAssessment && user && (
+              <ResultsPage
+                assessment={currentAssessment}
+                user={user}
+                previousAssessments={userAssessments.slice(0, -1)}
+              />
+            )}
+          </>
         )}
       </main>
 
