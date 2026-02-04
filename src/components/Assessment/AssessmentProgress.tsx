@@ -8,6 +8,15 @@ interface AssessmentProgressProps {
   totalQuestions: number;
   completedLayers: string[];
 }
+
+function getLayerQuestionCount(layer: AssessmentLayer): number {
+  let count = 0;
+  Object.values(layer.categories).forEach(questions => {
+    count += questions.length;
+  });
+  return count;
+}
+
 export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
   layers,
   currentLayerIndex,
@@ -15,9 +24,15 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
   totalQuestions,
   completedLayers
 }) => {
-  // Calculate progress more accurately
-  const questionsPerLayer = Math.floor(totalQuestions / layers.length);
-  const totalCompleted = completedLayers.length * questionsPerLayer + currentQuestionIndex;
+  const layerQuestionCounts = layers.map(getLayerQuestionCount);
+  const currentLayerQuestionCount = layerQuestionCounts[currentLayerIndex];
+
+  let totalCompleted = 0;
+  for (let i = 0; i < currentLayerIndex; i++) {
+    totalCompleted += layerQuestionCounts[i];
+  }
+  totalCompleted += currentQuestionIndex;
+
   const overallProgress = Math.min((totalCompleted / totalQuestions) * 100, 100);
 
   return (
@@ -108,12 +123,12 @@ export const AssessmentProgress: React.FC<AssessmentProgressProps> = ({
                   <div className="mt-3">
                     <div className="flex justify-between text-xs text-blue-600 mb-1">
                       <span>Layer Progress</span>
-                      <span>{currentQuestionIndex} / {questionsPerLayer} questions</span>
+                      <span>{currentQuestionIndex} / {currentLayerQuestionCount} questions</span>
                     </div>
                     <div className="w-full bg-blue-100 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min((currentQuestionIndex / questionsPerLayer) * 100, 100)}%` }}
+                        style={{ width: `${Math.min((currentQuestionIndex / currentLayerQuestionCount) * 100, 100)}%` }}
                       />
                     </div>
                   </div>

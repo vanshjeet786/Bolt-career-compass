@@ -162,6 +162,13 @@ const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
 };
 
 // Helper function to invoke the Supabase Edge Function for Groq
+function cleanGroqResponse(content: string): string {
+  let cleaned = content.trim();
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+  cleaned = cleaned.replace(/^\*\*/, '').replace(/\*\*$/, '');
+  return cleaned.trim();
+}
+
 async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temperature: number = 0.7) {
   try {
     const { data, error } = await supabase.functions.invoke('groq-ai-service', {
@@ -178,7 +185,7 @@ async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temp
     }
 
     if (data && data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content.trim();
+      return cleanGroqResponse(data.choices[0].message.content);
     }
 
     throw new Error('Invalid response from Groq AI service function.');
