@@ -149,7 +149,7 @@ const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   ],
   'l6-action-1': [
     'Based on your career interests and strengths, schedule informational interviews with professionals in your top career areas. Reach out through LinkedIn, alumni networks, or professional associations to learn about day-to-day realities. For example, if you\'re interested in data science, connect with data scientists to understand their typical projects and challenges.',
-    'Research and apply for internships, volunteer opportunities, or part-time roles in your areas of interest. Given your assessment profile, look for opportunities that allow you to use your demonstrated strengths. Hands-on experience provides invaluable insights into career fit and helps you build relevant skills.'
+    'Research and apply for internships, volunteer opportunities, or part-time roles in your areas of interest. Given your assessment profile, look for opportunities that allow you to use your demonstrated strengths. Hands-on experience provides valuable insights into career fit and helps you build relevant skills.'
   ],
   'l6-action-2': [
     'Based on your target careers and current skill assessment, identify specific technical skills, certifications, or knowledge areas that are commonly required in your chosen fields. Create a learning plan to address these gaps. For example, if you\'re pursuing data science, you might need to strengthen Python programming or statistical analysis skills.',
@@ -169,13 +169,14 @@ function cleanGroqResponse(content: string): string {
   return cleaned.trim();
 }
 
-async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temperature: number = 0.7) {
+async function invokeGroqFunction(messages: any[], maxTokens: number = 500, temperature: number = 0.7, jsonMode: boolean = false) {
   try {
     const { data, error } = await supabase.functions.invoke('groq-ai-service', {
       body: {
         messages,
         max_tokens: maxTokens,
-        temperature
+        temperature,
+        jsonMode
       },
     });
 
@@ -310,7 +311,7 @@ Keep the explanation encouraging and actionable, around 150-200 words.`
         }
       ];
 
-      return await invokeGroqFunction(messages, 300, 0.7);
+      return await invokeGroqFunction(messages, 300, 0.7, false);
     } catch (error) {
       console.error('Failed to get detailed AI explanation:', error);
       return this.getQuestionExplanation(question, layerId, categoryId) +
@@ -376,7 +377,7 @@ Be warm, encouraging, and specific. Each suggestion should feel personally craft
         }
       ];
 
-      const jsonResponse = await invokeGroqFunction(messages, 800, 0.8);
+      const jsonResponse = await invokeGroqFunction(messages, 800, 0.8, true);
 
       const parsed = this._safeParseJSON(jsonResponse);
 
@@ -468,7 +469,7 @@ User's Assessment Results:
         content: message
       });
 
-      return await invokeGroqFunction(messages, 400, 0.7);
+      return await invokeGroqFunction(messages, 400, 0.7, false);
     } catch (error) {
       console.error('Failed to get AI chat response, using fallback:', error);
       return this.getFallbackChatResponse(message, userResults);
@@ -575,7 +576,7 @@ Generate the JSON response as per the system instructions.`
         }
       ];
 
-      const response = await invokeGroqFunction(messages, 2400, 0.75);
+      const response = await invokeGroqFunction(messages, 2400, 0.75, true);
       
       let parsedResponse;
       try {
