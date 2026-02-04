@@ -17,7 +17,7 @@ serve(async (req) => {
     console.log("Function received a request. Method:", req.method);
     const body = await req.json();
     console.log("Request body parsed successfully.");
-    const { messages, max_tokens = 700, temperature = 0.7 } = body;
+    const { messages, max_tokens = 700, temperature = 0.7, jsonMode = false } = body;
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error("No 'messages' array found in the request body.");
@@ -31,7 +31,21 @@ serve(async (req) => {
     }
     console.log("Groq API key found.");
 
-    console.log("Calling Groq API...");
+    console.log(`Calling Groq API (jsonMode: ${jsonMode})...`);
+
+    const requestBody: any = {
+      model: "qwen/qwen3-32b",
+      messages: messages,
+      max_tokens: max_tokens,
+      temperature: temperature,
+      top_p: 0.9,
+      stream: false,
+    };
+
+    if (jsonMode) {
+      requestBody.response_format = { type: "json_object" };
+    }
+
     const response = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
       {
@@ -40,15 +54,7 @@ serve(async (req) => {
           'Authorization': `Bearer ${groqApiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: "qwen/qwen3-32b",
-          messages: messages,
-          max_tokens: max_tokens,
-          temperature: temperature,
-          top_p: 0.9,
-          stream: false,
-          response_format: { type: "json_object" },
-        }),
+        body: JSON.stringify(requestBody),
       }
     );
     console.log("Groq API response status:", response.status);
