@@ -292,7 +292,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-gray-100">
+    <div className="min-h-screen bg-gray-50">
       <Header
         user={user}
         onAuthClick={() => setShowAuthModal(true)}
@@ -303,7 +303,7 @@ function App() {
         onDashboard={user && currentState !== 'dashboard' ? handleBackToDashboard : undefined}
       />
 
-      <main className="pt-20">
+      <main>
         {currentState === 'landing' && (
           <LandingPage onGetStarted={handleGetStarted} />
         )}
