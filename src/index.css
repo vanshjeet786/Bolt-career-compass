@@ -21,8 +21,8 @@
 body {
   font-family: var(--font-poppins);
   line-height: 1.6;
-  color: #1f2937;
-  background-color: #f9fafb;
+  color: #f8fafc; /* Light text for dark mode */
+  background-color: #0f172a; /* Slate 900 */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -31,6 +31,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-montserrat);
   font-weight: 600;
   line-height: 1.2;
+  color: #f1f5f9;
 }
 
 .font-exo {
@@ -43,16 +44,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #1e293b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #475569;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #64748b;
 }
 
 /* Smooth transitions for all interactive elements */
@@ -94,6 +95,15 @@ button, input, textarea, select {
   }
 }
 
+@keyframes slow-zoom {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+
 /* Utility classes for animations */
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
@@ -107,30 +117,32 @@ button, input, textarea, select {
   animation: scaleIn 0.3s ease-out;
 }
 
-@keyframes slow-zoom {
-  0% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(1.1);
-  }
-}
-
 .animate-slow-zoom {
   animation: slow-zoom 40s ease-in-out infinite alternate;
 }
 
-/* Gradient backgrounds */
+/* Gradient backgrounds - Updated for Skitre Palette */
 .bg-gradient-primary {
-  background: linear-gradient(135deg, #2563eb 0%, #FF6347 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #f59e0b 100%);
 }
 
-/* Glass morphism effect */
+.bg-gradient-brand {
+    background: linear-gradient(to right, #2563eb, #1e40af);
+}
+
+/* Glass morphism effect - Updated for Dark Mode */
 .glass {
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background-color: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(209, 213, 219, 0.3);
+  background-color: rgba(30, 41, 59, 0.7); /* Dark Slate with opacity */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-light {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Responsive font sizes */
@@ -189,6 +201,7 @@ button, input, textarea, select {
 /* Custom component styles */
 .prose {
   max-width: none;
+  color: #cbd5e1;
 }
 
 .prose p {
@@ -199,11 +212,12 @@ button, input, textarea, select {
 .prose h1, .prose h2, .prose h3 {
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
+  color: #f1f5f9;
 }
 
 /* Loading spinner */
 .spinner {
-  border: 2px solid #f3f4f6;
+  border: 2px solid #1e293b;
   border-top: 2px solid #3b82f6;
   border-radius: 50%;
   width: 20px;

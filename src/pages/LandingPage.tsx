@@ -41,21 +41,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50">
+    <div className="min-h-screen bg-background text-gray-100">
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-full mb-8 mx-auto animate-pulse">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-full mb-8 mx-auto animate-pulse shadow-glow">
             <Brain className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
               Navigate Your
             </span>
             <br />
-            <span className="text-gray-800">Career Journey</span>
+            <span className="text-white">Career Journey</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto">
             Take our comprehensive AI-driven assessment to uncover your strengths, 
             explore career opportunities, and navigate your path to professional success.
           </p>
@@ -81,26 +81,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {features.map((feature, index) => (
-            <Card key={index} hover className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-full mb-4">
-                <feature.icon className="w-6 h-6 text-primary-600" />
+            <Card key={index} hover className="text-center bg-white/5 border-white/10">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-900/40 to-secondary-900/40 rounded-full mb-4 border border-white/10">
+                <feature.icon className="w-6 h-6 text-primary-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">{feature.title}</h3>
-              <p className="text-gray-600">{feature.description}</p>
+              <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+              <p className="text-gray-400">{feature.description}</p>
             </Card>
           ))}
         </div>
       </section>
 
       {/* Assessment Overview */}
-      <section className="bg-secondary-50 py-16">
+      <section className="bg-white/5 py-16 border-y border-white/5">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-gray-800 mb-4">
+              <h2 className="text-4xl font-bold text-white mb-4">
                 Comprehensive 6-Layer Assessment
               </h2>
-              <p className="text-xl text-gray-600">
+              <p className="text-xl text-gray-400">
                 Our scientifically-backed assessment examines multiple dimensions 
                 of your personality, skills, and preferences.
               </p>
@@ -108,17 +108,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {assessmentLayers.map((layer, index) => (
-                <div key={index} className="flex items-start space-x-4 p-4">
+                <div key={index} className="flex items-start space-x-4 p-4 rounded-2xl hover:bg-white/5 transition-colors">
                   <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                      <CheckCircle className="w-5 h-5 text-secondary-600" />
+                    <div className="flex items-center justify-center w-8 h-8 bg-success-900/30 rounded-full border border-success-500/30">
+                      <CheckCircle className="w-5 h-5 text-success-400" />
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-800 mb-1">
+                    <h3 className="font-semibold text-white mb-1">
                       Layer {index + 1}
                     </h3>
-                    <p className="text-gray-600">{layer}</p>
+                    <p className="text-gray-400">{layer}</p>
                   </div>
                 </div>
               ))}
@@ -128,12 +128,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-secondary-600 py-16">
-        <div className="container mx-auto px-4 text-center">
+      <section className="bg-gradient-to-r from-primary-900/50 to-secondary-900/50 py-16 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2071&auto=format&fit=crop')] opacity-10 bg-cover bg-center mix-blend-overlay"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
           <h2 className="text-4xl font-bold text-white mb-4">
             Ready to Transform Your Career?
           </h2>
-          <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Join thousands of professionals who have found their ideal career path 
             through our AI-powered assessment.
           </p>
@@ -141,7 +142,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             size="lg"
             variant="secondary"
             onClick={onGetStarted}
-            className="text-lg px-8 py-4 bg-white text-primary-600 hover:bg-gray-50 hover:scale-105 transition-transform duration-200"
+            className="text-lg px-8 py-4 shadow-glow"
           >
             Start Your Journey Now
           </Button>

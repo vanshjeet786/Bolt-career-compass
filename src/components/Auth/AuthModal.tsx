@@ -106,23 +106,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-white/10 bg-slate-900/90 shadow-xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold text-white">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-white transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
 
@@ -135,7 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
                 placeholder="Full Name"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+                className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
                 required={!isLogin}
               />
             </div>
@@ -148,7 +148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
               placeholder="Email Address"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
               required
             />
           </div>
@@ -160,13 +160,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
               placeholder="Password"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+              className="w-full pl-10 pr-12 py-3 bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
               required
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-3 text-gray-400 hover:text-white"
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
@@ -183,13 +183,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
         </form>
 
         <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
-            </div>
+          <div className="flex items-center gap-4 my-6">
+            <div className="h-px bg-white/10 flex-1" />
+            <span className="text-sm text-gray-400">Or continue with</span>
+            <div className="h-px bg-white/10 flex-1" />
           </div>
 
           <div className="mt-6 space-y-3">
@@ -197,7 +194,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
               variant="outline"
               onClick={handleGoogleAuth}
               loading={isLoading}
-              className="w-full"
+              className="w-full bg-transparent border-slate-700 text-white hover:bg-slate-800"
             >
               <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4 mr-2" />
               Google
@@ -208,7 +205,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onAuth })
         <div className="mt-6 text-center">
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-blue-600 hover:text-blue-800 text-sm"
+            className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
           >
             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>
