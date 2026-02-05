@@ -7,6 +7,8 @@
 @tailwind utilities;
 
 :root {
+  --font-sans: 'Figtree', sans-serif;
+  --font-heading: 'Outfit', sans-serif;
   --font-poppins: 'Poppins', sans-serif;
   --font-montserrat: 'Montserrat', sans-serif;
   --font-exo: 'Exo', sans-serif;
@@ -19,19 +21,19 @@
 }
 
 body {
-  font-family: var(--font-poppins);
+  font-family: var(--font-sans);
   line-height: 1.6;
-  color: #f8fafc; /* Light text for dark mode */
-  background-color: #0f172a; /* Slate 900 */
+  color: #1c1c1c; /* Light Mode Text */
+  background-color: #f8fafc; /* Slate 50 - Off-White */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-montserrat);
+  font-family: var(--font-heading);
   font-weight: 600;
   line-height: 1.2;
-  color: #f1f5f9;
+  color: #0f172a; /* Slate 900 */
 }
 
 .font-exo {
@@ -44,16 +46,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #94a3b8;
 }
 
 /* Smooth transitions for all interactive elements */
@@ -130,18 +132,19 @@ button, input, textarea, select {
     background: linear-gradient(to right, #2563eb, #1e40af);
 }
 
-/* Glass morphism effect - Updated for Dark Mode */
+/* Glass morphism effect - Updated for Light Mode */
 .glass {
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background-color: rgba(30, 41, 59, 0.7); /* Dark Slate with opacity */
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.7); /* White with opacity */
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
-.glass-light {
+.glass-dark {
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(30, 41, 59, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -201,7 +204,7 @@ button, input, textarea, select {
 /* Custom component styles */
 .prose {
   max-width: none;
-  color: #cbd5e1;
+  color: #475569; /* Slate 600 */
 }
 
 .prose p {
@@ -212,12 +215,12 @@ button, input, textarea, select {
 .prose h1, .prose h2, .prose h3 {
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
-  color: #f1f5f9;
+  color: #0f172a; /* Slate 900 */
 }
 
 /* Loading spinner */
 .spinner {
-  border: 2px solid #1e293b;
+  border: 2px solid #e2e8f0;
   border-top: 2px solid #3b82f6;
   border-radius: 50%;
   width: 20px;
@@ -228,4 +231,11 @@ button, input, textarea, select {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+.animation-delay-4000 {
+  animation-delay: 4s;
 }

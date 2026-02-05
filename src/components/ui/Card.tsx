@@ -19,8 +19,8 @@ export const Card: React.FC<CardProps> = ({
     lg: 'p-8'
   };
 
-  // Updated to use darker glass effect and rounded-3xl
-  const hoverClasses = hover ? 'hover:shadow-glow hover:border-primary-500/50 transition-all duration-300' : '';
+  // Updated to use light glass effect and rounded-3xl
+  const hoverClasses = hover ? 'hover:shadow-xl hover:border-primary-500/30 transition-all duration-300' : '';
 
   return (
     <div className={`glass rounded-3xl shadow-xl ${paddingClasses[padding]} ${hoverClasses} ${className}`}>

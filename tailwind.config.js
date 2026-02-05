@@ -4,7 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Noto Sans"', 'sans-serif'],
+        sans: ['Figtree', '"Noto Sans"', 'sans-serif'], // Figtree as default
+        heading: ['Outfit', 'sans-serif'],             // Outfit for headings
         geo: ['Geo', 'sans-serif'],
         electrolize: ['Electrolize', 'sans-serif'],
         'nova-square': ['"Nova Square"', 'sans-serif'],
@@ -109,8 +110,23 @@ export default {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'bounce-slow': 'bounce 2s infinite',
         'slow-zoom': 'slow-zoom 40s ease-in-out infinite alternate',
+        blob: "blob 7s infinite",
       },
       keyframes: {
+        blob: {
+          "0%": {
+            transform: "translate(0px, 0px) scale(1)",
+          },
+          "33%": {
+            transform: "translate(30px, -50px) scale(1.1)",
+          },
+          "66%": {
+            transform: "translate(-20px, 20px) scale(0.9)",
+          },
+          "100%": {
+            transform: "translate(0px, 0px) scale(1)",
+          },
+        },
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
