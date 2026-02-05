@@ -293,19 +293,17 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background text-gray-100">
-      {currentState !== 'assessment' && (
-        <Header
-          user={user}
-          onAuthClick={() => setShowAuthModal(true)}
-          onProfileClick={() => setShowProfileModal(true)}
-          onLogout={handleLogout}
-          onDownloadReport={currentState === 'results' ? handleDownloadReport : undefined}
-          showDownload={currentState === 'results'}
-          onDashboard={user && currentState !== 'dashboard' ? handleBackToDashboard : undefined}
-        />
-      )}
+      <Header
+        user={user}
+        onAuthClick={() => setShowAuthModal(true)}
+        onProfileClick={() => setShowProfileModal(true)}
+        onLogout={handleLogout}
+        onDownloadReport={currentState === 'results' ? handleDownloadReport : undefined}
+        showDownload={currentState === 'results'}
+        onDashboard={user && currentState !== 'dashboard' ? handleBackToDashboard : undefined}
+      />
 
-      <main className={currentState !== 'assessment' ? "pt-20" : ""}>
+      <main className="pt-20">
         {currentState === 'landing' && (
           <LandingPage onGetStarted={handleGetStarted} />
         )}
