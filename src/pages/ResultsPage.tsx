@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2 } from 'lucide-react';
+import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll } from 'lucide-react';
 import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
@@ -18,9 +18,10 @@ interface ResultsPageProps {
   assessment: Assessment;
   user: User;
   previousAssessments?: Assessment[];
+  onFinish?: () => void;
 }
 
-export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, previousAssessments = [] }) => {
+export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, previousAssessments = [], onFinish }) => {
   const [aiInsights, setAiInsights] = useState<string>('');
   const [showChat, setShowChat] = useState(false);
   const [sortBy, setSortBy] = useState<'match' | 'salary' | 'name'>('match');
@@ -761,6 +762,20 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
             </div>
           </div>
         </div>
+
+        {/* Finish Assessment Button */}
+        {onFinish && (
+          <div className="mt-12 mb-8 flex justify-center">
+            <Button
+              onClick={onFinish}
+              size="lg"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 px-12 py-4 text-lg rounded-full"
+              icon={SaveAll}
+            >
+              Finish Assessment
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

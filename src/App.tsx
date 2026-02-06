@@ -73,12 +73,13 @@ function App() {
         }));
 
         // Recalculate scores and recommendations to ensure data integrity,
-        // but prefer the stored values if they exist.
+        // but prefer the stored values if they exist AND are sufficient (at least 8 careers).
+        // If stored careers are fewer than 8 (fixing the 3-match bug), regenerate them.
         const scores = (assessment.scores && Object.keys(assessment.scores).length > 0)
           ? assessment.scores
           : calculateScores(responses);
 
-        const recommendedCareers = (assessment.recommended_careers && assessment.recommended_careers.length > 0)
+        const recommendedCareers = (assessment.recommended_careers && assessment.recommended_careers.length >= 8)
           ? assessment.recommended_careers
           : generateCareerRecommendations(scores);
 
@@ -280,6 +281,19 @@ function App() {
     setCurrentState('results');
   };
 
+  const handleFinishAssessment = async (assessment: Assessment) => {
+    // If assessment ID is a timestamp (indicating it wasn't saved to DB yet), try to save it.
+    // DB IDs are UUIDs (36 chars), timestamp IDs are ~13 chars.
+    if (user && assessment.id.length < 20) {
+      console.log('Saving unsaved assessment before finishing...');
+      const saved = await saveAssessment(assessment, user.id);
+      if (saved) {
+        await loadUserAssessments(user.id);
+      }
+    }
+    setCurrentState('dashboard');
+  };
+
   const handleBackToDashboard = () => {
     setCurrentState('dashboard');
   };
@@ -331,6 +345,7 @@ function App() {
             assessment={currentAssessment}
             user={user}
             previousAssessments={userAssessments.slice(0, -1)}
+            onFinish={() => handleFinishAssessment(currentAssessment)}
           />
         )}
       </main>
