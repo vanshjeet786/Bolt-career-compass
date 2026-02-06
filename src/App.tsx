@@ -303,7 +303,7 @@ function App() {
         onDashboard={user && currentState !== 'dashboard' ? handleBackToDashboard : undefined}
       />
 
-      <main>
+      <main className="pt-24">
         {currentState === 'landing' && (
           <LandingPage onGetStarted={handleGetStarted} />
         )}
