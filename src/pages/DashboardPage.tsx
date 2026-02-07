@@ -153,7 +153,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
               {filteredHistory.length > 0 ? (
                 <div className="space-y-4">
-                  {filteredHistory.slice().reverse().map((assessment, index) => (
+                  {filteredHistory.map((assessment, index) => (
                     <div
                       key={assessment.id}
                       className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-white hover:shadow-md transition-all duration-200 group"
