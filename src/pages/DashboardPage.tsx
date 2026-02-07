@@ -154,7 +154,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               {filteredHistory.length > 0 ? (
                 <div className="space-y-4">
 
-                  {filteredHistory.map((assessment, index) => (
+                  {filteredHistory.map((assessment, index) => 
+                  (
 
                     <div
                       key={assessment.id}
