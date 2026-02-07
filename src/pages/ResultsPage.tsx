@@ -175,20 +175,46 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   };
   const getProgressAnalysis = () => {
     if (previousAssessments.length === 0) return null;
-    const lastAssessment = previousAssessments[previousAssessments.length - 1];
-    const lastScores = lastAssessment.scores as Record<string, number>;
-    const improvements = [];
-    const declines = [];
     
-    Object.entries(numericalScores).forEach(([category, currentScore]) => {
-      const previousScore = lastScores[category];
-      if (previousScore) {
-        const change = currentScore - previousScore;
-        if (change > 0.3) improvements.push({ category, change });
-        else if (change < -0.3) declines.push({ category, change });
-      }
-    });
-    return { improvements, declines, totalAssessments: previousAssessments.length + 1 };
+    // Calculate the correct assessment number
+    // previousAssessments are sorted newest first (descending order)
+    // We need to find where the current assessment sits in the chronological history
+
+    // Sort chronologically (oldest first) to determine the index
+    const sortedAssessments = [...previousAssessments].sort((a, b) =>
+      new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime()
+    );
+
+    // Find index of current assessment by comparing timestamps or IDs
+    // If the current assessment is already in the history (viewing past result), we find its index
+    // If it's a new assessment (just finished), it won't be in history yet, so it's last
+    const currentAssessmentIndex = sortedAssessments.findIndex(a => a.id === assessment.id);
+    const assessmentNumber = currentAssessmentIndex !== -1
+      ? currentAssessmentIndex + 1
+      : sortedAssessments.length + 1;
+
+    // Use the immediately preceding assessment for comparison
+    // If viewing #17, compare with #16. If viewing #1, no comparison.
+    const comparisonAssessment = currentAssessmentIndex > 0
+      ? sortedAssessments[currentAssessmentIndex - 1]
+      : (currentAssessmentIndex === -1 ? sortedAssessments[sortedAssessments.length - 1] : null);
+
+    const improvements: { category: string; change: number }[] = [];
+    const declines: { category: string; change: number }[] = [];
+
+    if (comparisonAssessment) {
+      const lastScores = comparisonAssessment.scores as Record<string, number>;
+      Object.entries(numericalScores).forEach(([category, currentScore]) => {
+        const previousScore = lastScores[category];
+        if (previousScore) {
+          const change = currentScore - previousScore;
+          if (change > 0.3) improvements.push({ category, change });
+          else if (change < -0.3) declines.push({ category, change });
+        }
+      });
+    }
+
+    return { improvements, declines, totalAssessments: assessmentNumber };
   };
   const progressAnalysis = getProgressAnalysis();
   return (

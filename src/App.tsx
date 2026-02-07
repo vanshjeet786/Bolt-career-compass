@@ -81,7 +81,7 @@ function App() {
 
         const recommendedCareers = (assessment.recommended_careers && assessment.recommended_careers.length >= 8)
           ? assessment.recommended_careers
-          : generateCareerRecommendations(scores);
+          : generateCareerRecommendations(scores).slice(0, 8);
 
         return {
           id: assessment.id,
