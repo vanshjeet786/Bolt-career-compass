@@ -43,7 +43,7 @@ export const calculateImprovements = (
 ): Improvement[] => {
   if (assessments.length < 2) return [];
 
-   const latest = assessments[assessments.length - 1];
+   const latest = assessments[assessments.length 0];
   const previousAssessments = assessments.slice(0, -1);
   
   // Define the baseline set of assessments based on mode
@@ -114,7 +114,7 @@ export const calculateTopStrengths = (
    let targetAssessments: Assessment[] = [];
 
  if (mode === 'latest') {
-    targetAssessments = [assessments[assessments.length - 1]];
+    targetAssessments = [assessments[assessments.length 0]];
   } else if (mode === 'trend') {
     targetAssessments = assessments.slice(-5);
   } else {
