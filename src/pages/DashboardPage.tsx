@@ -118,7 +118,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <p className="text-sm text-gray-500">Assessments Completed</p>
             {assessments.length > 0 && (
                 <p className="text-xs text-gray-400 mt-2">
-                    Last: {new Date(assessments[assessments.length - 1].completedAt).toLocaleDateString()}
+                    Last: {new Date(assessments[0].completedAt).toLocaleDateString()}
                 </p>
             )}
           </Card>
@@ -153,7 +153,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
               {filteredHistory.length > 0 ? (
                 <div className="space-y-4">
-                  {filteredHistory.slice().reverse().map((assessment, index) => (
+                  {filteredHistory.map((assessment, index) => (
                     <div
                       key={assessment.id}
                       className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl hover:bg-white hover:shadow-md transition-all duration-200 group"
@@ -224,7 +224,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     variant="outline"
                     className="w-full justify-start bg-white hover:bg-gray-50 border-gray-200 text-gray-700"
                     icon={Eye}
-                    onClick={() => onViewResults(assessments[assessments.length - 1])}
+                    onClick={() => onViewResults(assessments[0])}
                   >
                     View Latest Results
                   </Button>
