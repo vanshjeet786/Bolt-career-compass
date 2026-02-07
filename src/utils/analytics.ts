@@ -43,9 +43,9 @@ export const calculateImprovements = (
 ): Improvement[] => {
   if (assessments.length < 2) return [];
 
-  const latest = assessments[assessments.length - 1];
+   const latest = assessments[assessments.length 0];
   const previousAssessments = assessments.slice(0, -1);
-
+  
   // Define the baseline set of assessments based on mode
   let baselineSet: Assessment[] = [];
 
@@ -111,16 +111,16 @@ export const calculateTopStrengths = (
 ): Strength[] => {
   if (assessments.length === 0) return [];
 
-  let targetAssessments: Assessment[] = [];
+   let targetAssessments: Assessment[] = [];
 
-  if (mode === 'latest') {
-    targetAssessments = [assessments[assessments.length - 1]];
+ if (mode === 'latest') {
+    targetAssessments = [assessments[assessments.length 0]];
   } else if (mode === 'trend') {
     targetAssessments = assessments.slice(-5);
   } else {
     targetAssessments = assessments;
   }
-
+  
   const categoryTotals: Record<string, { total: number; count: number }> = {};
 
   targetAssessments.forEach(a => {
@@ -158,7 +158,7 @@ export const calculateCareerMatches = (
 ): CareerMatch[] => {
   if (assessments.length === 0) return [];
 
-  let targetAssessments: Assessment[] = [];
+    let targetAssessments: Assessment[] = [];
 
   if (mode === 'latest') {
     // For latest, we just want the careers from the last assessment
