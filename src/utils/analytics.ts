@@ -43,7 +43,7 @@ export const calculateImprovements = (
 ): Improvement[] => {
   if (assessments.length < 2) return [];
 
-   const latest = assessments[assessments.length 0];
+   const latest = assessments[assessments.length [];
   const previousAssessments = assessments.slice(0, -1);
   
   // Define the baseline set of assessments based on mode
