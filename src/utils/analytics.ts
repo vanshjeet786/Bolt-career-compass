@@ -43,8 +43,13 @@ export const calculateImprovements = (
 ): Improvement[] => {
   if (assessments.length < 2) return [];
 
-   const latest = assessments[assessments.length [];
-  const previousAssessments = assessments.slice(0, -1);
+  // Sort assessments chronologically (Oldest First)
+  const sortedAssessments = [...assessments].sort((a, b) =>
+    new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime()
+  );
+
+  const latest = sortedAssessments[sortedAssessments.length - 1];
+  const previousAssessments = sortedAssessments.slice(0, -1);
   
   // Define the baseline set of assessments based on mode
   let baselineSet: Assessment[] = [];
@@ -111,14 +116,19 @@ export const calculateTopStrengths = (
 ): Strength[] => {
   if (assessments.length === 0) return [];
 
-   let targetAssessments: Assessment[] = [];
+  // Sort assessments chronologically (Oldest First)
+  const sortedAssessments = [...assessments].sort((a, b) =>
+    new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime()
+  );
 
- if (mode === 'latest') {
-    targetAssessments = [assessments[assessments.length 0]];
+  let targetAssessments: Assessment[] = [];
+
+  if (mode === 'latest') {
+    targetAssessments = [sortedAssessments[sortedAssessments.length - 1]];
   } else if (mode === 'trend') {
-    targetAssessments = assessments.slice(-5);
+    targetAssessments = sortedAssessments.slice(-5);
   } else {
-    targetAssessments = assessments;
+    targetAssessments = sortedAssessments;
   }
   
   const categoryTotals: Record<string, { total: number; count: number }> = {};
@@ -158,16 +168,21 @@ export const calculateCareerMatches = (
 ): CareerMatch[] => {
   if (assessments.length === 0) return [];
 
-    let targetAssessments: Assessment[] = [];
+  // Sort assessments chronologically (Oldest First)
+  const sortedAssessments = [...assessments].sort((a, b) =>
+    new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime()
+  );
+
+  let targetAssessments: Assessment[] = [];
 
   if (mode === 'latest') {
     // For latest, we just want the careers from the last assessment
     // But to keep data structure consistent, we can still run frequency on just one
-    targetAssessments = [assessments[assessments.length - 1]];
+    targetAssessments = [sortedAssessments[sortedAssessments.length - 1]];
   } else if (mode === 'trend') {
-    targetAssessments = assessments.slice(-5);
+    targetAssessments = sortedAssessments.slice(-5);
   } else {
-    targetAssessments = assessments;
+    targetAssessments = sortedAssessments;
   }
 
   const careerCounts: Record<string, { count: number; lastSeen: Date }> = {};
