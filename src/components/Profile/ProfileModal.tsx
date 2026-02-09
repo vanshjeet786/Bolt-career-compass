@@ -63,8 +63,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const handleDeleteAllAssessments = async () => {
     setIsDeleting('all');
     try {
-      // Since assessment_responses has a foreign key constraint with cascade delete on assessments,
-      // we only need to delete the assessments.
+      // Get all assessment IDs for the user
+      const assessmentIds = assessments.map(a => a.id);
+
+      if (assessmentIds.length > 0) {
+        // Delete all responses for these assessments first
+        const { error: responsesError } = await supabase
+          .from('assessment_responses')
+          .delete()
+          .in('assessment_id', assessmentIds);
+
+        if (responsesError) throw responsesError;
+      }
+
+      // Then delete the assessments themselves
       const { error: assessmentError } = await supabase
         .from('assessments')
         .delete()
