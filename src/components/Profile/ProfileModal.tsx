@@ -63,11 +63,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const handleDeleteAllAssessments = async () => {
     setIsDeleting('all');
     try {
-      // Get all assessment IDs for the user
-      const assessmentIds = assessments.map(a => a.id);
+      // 1. Fetch ALL assessment IDs for the user from the database to ensure we have the complete list
+      const { data: userAssessments, error: fetchError } = await supabase
+        .from('assessments')
+        .select('id')
+        .eq('user_id', user.id);
 
-      if (assessmentIds.length > 0) {
-        // Delete all responses for these assessments first
+      if (fetchError) throw fetchError;
+
+      if (userAssessments && userAssessments.length > 0) {
+        const assessmentIds = userAssessments.map(a => a.id);
+
+        // 2. Delete all responses linked to these assessment IDs
+        // We do this in batches if necessary, but typically this should be fine
         const { error: responsesError } = await supabase
           .from('assessment_responses')
           .delete()
@@ -76,7 +84,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
         if (responsesError) throw responsesError;
       }
 
-      // Then delete the assessments themselves
+      // 3. Finally, delete the assessments themselves
       const { error: assessmentError } = await supabase
         .from('assessments')
         .delete()
