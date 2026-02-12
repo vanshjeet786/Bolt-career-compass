@@ -14,6 +14,16 @@ export interface Assessment {
   scores: Record<string, number | string>;
   recommendedCareers: string[];
   mlPrediction?: string;
+  backgroundInfo?: {
+    userType: 'professional' | 'student' | 'graduate' | 'other';
+    details?: {
+      jobTitle?: string;
+      yearsExperience?: string;
+      fieldOfStudy?: string;
+      specialization?: string;
+      currentStatus?: string;
+    };
+  };
 }
 
 export interface AssessmentResponse {

@@ -61,7 +61,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
         const insights = await aiService.generateCareerRecommendations(
           assessment.scores as Record<string, number>,
           assessment.responses,
-          previousAssessments
+          previousAssessments,
+          assessment.backgroundInfo
         );
         setAiInsights(insights);
       } catch (error) {
@@ -150,7 +151,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
     try {
       const enhancedResults = await aiService.generateEnhancedResults(
         numericalScores,
-        assessment.responses
+        assessment.responses,
+        assessment.backgroundInfo
       );
       setAiEnhancedResults(enhancedResults);
     } catch (error) {
@@ -766,7 +768,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                   userResults={{
                     scores: numericalScores,
                     careers: assessment.recommendedCareers,
-                    previousAssessments
+                    previousAssessments,
+                    backgroundInfo: assessment.backgroundInfo
                   }} 
                 />
               ) : (

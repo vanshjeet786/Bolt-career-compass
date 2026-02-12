@@ -10,6 +10,7 @@ interface AIChatProps {
     scores: Record<string, number>;
     careers: string[];
     previousAssessments?: any[];
+    backgroundInfo?: any;
   };
 }
 
