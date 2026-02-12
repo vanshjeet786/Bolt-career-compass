@@ -7,10 +7,11 @@ import { LandingPage } from './pages/LandingPage';
 import { AssessmentPage } from './pages/AssessmentPage';
 import { ResultsPage } from './pages/ResultsPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { BackgroundInfoPage } from './pages/BackgroundInfoPage';
 import { User, Assessment, AssessmentResponse } from './types';
 import { calculateScores, generateCareerRecommendations } from './services/assessmentService';
 
-type AppState = 'landing' | 'dashboard' | 'assessment' | 'results';
+type AppState = 'landing' | 'dashboard' | 'background_info' | 'assessment' | 'results';
 
 interface SupabaseResponse {
   layer_number: number;
@@ -27,6 +28,7 @@ function App() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [userAssessments, setUserAssessments] = useState<Assessment[]>([]);
+  const [backgroundInfo, setBackgroundInfo] = useState<any>(null);
 
   // Create a ref to hold the user object to prevent stale closures in subscriptions
   const userRef = useRef(user);
@@ -46,6 +48,7 @@ function App() {
           scores,
           recommended_careers,
           ml_prediction,
+          background_info,
           assessment_responses (
             assessment_id,
             question_id,
@@ -91,6 +94,7 @@ function App() {
           scores,
           recommendedCareers,
           mlPrediction: assessment.ml_prediction || recommendedCareers[0],
+          backgroundInfo: assessment.background_info || undefined,
         };
       });
 
@@ -111,6 +115,7 @@ function App() {
           scores: assessment.scores,
           recommended_careers: assessment.recommendedCareers,
           ml_prediction: assessment.mlPrediction,
+          background_info: assessment.backgroundInfo,
           status: 'completed'
         })
         .select('*')
@@ -153,7 +158,7 @@ function App() {
 
   const handleGetStarted = () => {
     if (user) {
-      setCurrentState('assessment');
+      setCurrentState('background_info');
     } else {
       setShowAuthModal(true);
     }
@@ -200,6 +205,16 @@ function App() {
         await loadUserAssessments(user.id);
 
         const inProgressAssessment = localStorage.getItem(`inProgressAssessment_${user.id}`);
+        const savedBackgroundInfo = localStorage.getItem(`backgroundInfo_${user.id}`);
+
+        if (savedBackgroundInfo) {
+          try {
+            setBackgroundInfo(JSON.parse(savedBackgroundInfo));
+          } catch (e) {
+            console.error('Failed to parse background info', e);
+          }
+        }
+
         if (inProgressAssessment) {
           setCurrentState('assessment');
         } else {
@@ -241,14 +256,24 @@ function App() {
   }, []);
 
   const handleAssessmentComplete = async (assessment: Assessment) => {
+    // Merge background info into the assessment object
+    const completeAssessment = {
+      ...assessment,
+      backgroundInfo
+    };
+
     if (user) {
-      const savedAssessmentWithId = await saveAssessment(assessment, user.id);
+      const savedAssessmentWithId = await saveAssessment(completeAssessment, user.id);
 
       if (savedAssessmentWithId) {
         // Set the current assessment to the one returned from the DB, which includes the ID
         setCurrentAssessment(savedAssessmentWithId);
         // Reload the full list of assessments to ensure UI consistency
         await loadUserAssessments(user.id);
+
+        // Clear background info from local storage
+        localStorage.removeItem(`backgroundInfo_${user.id}`);
+        setBackgroundInfo(null);
       } else {
         // Handle the case where the assessment fails to save
         console.error("Could not save assessment. Cannot proceed to results.");
@@ -257,8 +282,8 @@ function App() {
       }
     } else {
       // For non-logged-in users, the assessment is not saved and won't have an ID
-      setCurrentAssessment(assessment);
-      setUserAssessments(prev => [...prev, assessment]);
+      setCurrentAssessment(completeAssessment);
+      setUserAssessments(prev => [...prev, completeAssessment]);
     }
 
     setCurrentState('results');
@@ -267,8 +292,18 @@ function App() {
   const handleStartNewAssessment = () => {
     if (user) {
       localStorage.removeItem(`inProgressAssessment_${user.id}`);
+      localStorage.removeItem(`backgroundInfo_${user.id}`);
     }
     setCurrentAssessment(null);
+    setBackgroundInfo(null);
+    setCurrentState('background_info');
+  };
+
+  const handleBackgroundInfoComplete = (info: any) => {
+    setBackgroundInfo(info);
+    if (user) {
+      localStorage.setItem(`backgroundInfo_${user.id}`, JSON.stringify(info));
+    }
     setCurrentState('assessment');
   };
 
@@ -329,6 +364,13 @@ function App() {
             onStartNewAssessment={handleStartNewAssessment}
             onResumeAssessment={handleResumeAssessment}
             onViewResults={handleViewResults}
+          />
+        )}
+
+        {currentState === 'background_info' && user && (
+          <BackgroundInfoPage
+            onComplete={handleBackgroundInfoComplete}
+            onBack={handleBackToDashboard}
           />
         )}
 

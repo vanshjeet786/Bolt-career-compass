@@ -227,9 +227,10 @@ class AIService {
   async generateCareerRecommendations(
     scores: Record<string, number>,
     responses: any[],
-    previousAssessments?: any[]
+    previousAssessments?: any[],
+    backgroundInfo?: any
   ): Promise<string> {
-    const cacheKey = `career-rec-${JSON.stringify(scores)}-${previousAssessments?.length || 0}`;
+    const cacheKey = `career-rec-${JSON.stringify(scores)}-${previousAssessments?.length || 0}-${JSON.stringify(backgroundInfo || {})}`;
     if (this.responseCache.has(cacheKey)) return this.responseCache.get(cacheKey);
 
     const topCategories = Object.entries(scores)
@@ -237,6 +238,17 @@ class AIService {
       .slice(0, 3).map(([category]) => category);
 
     let insights = `Based on your comprehensive assessment, you demonstrate exceptional strengths in ${topCategories.join(', ')}. `;
+
+    if (backgroundInfo && backgroundInfo.userType) {
+      const type = backgroundInfo.userType;
+      const details = backgroundInfo.details || {};
+      if (type === 'professional' && details.jobTitle) {
+        insights += `Given your experience as a ${details.jobTitle}, you can leverage your professional background to transition effectively into roles that align with these strengths. `;
+      } else if ((type === 'student' || type === 'graduate') && details.fieldOfStudy) {
+         insights += `With your background in ${details.fieldOfStudy}, these strengths suggest specialized career paths that combine your academic knowledge with your natural aptitudes. `;
+      }
+    }
+
     if (previousAssessments && previousAssessments.length > 0) {
       insights += `I've also noticed significant growth in several areas since your last assessment. `;
     }
@@ -441,15 +453,28 @@ Be warm, encouraging, and specific. Each suggestion should feel personally craft
   async chatResponse(
     message: string,
     history: ChatMessage[],
-    userResults?: { scores: Record<string, number>; careers: string[] }
+    userResults?: { scores: Record<string, number>; careers: string[], backgroundInfo?: any }
   ): Promise<string> {
     try {
+      const bgInfo = userResults?.backgroundInfo;
+      let bgContext = "Not provided";
+      if (bgInfo) {
+        if (bgInfo.userType === 'professional') {
+          bgContext = `Working Professional (${bgInfo.details?.jobTitle}, ${bgInfo.details?.yearsExperience} years exp)`;
+        } else if (bgInfo.userType === 'student' || bgInfo.userType === 'graduate') {
+          bgContext = `${bgInfo.userType === 'student' ? 'Student' : 'Graduate'} in ${bgInfo.details?.fieldOfStudy} - ${bgInfo.details?.specialization}`;
+        } else {
+          bgContext = `Other (${bgInfo.details?.currentStatus})`;
+        }
+      }
+
       const messages = [
         {
           role: "system",
           content: `You are a friendly, expert career counselor. You're helping a user who has completed a career assessment. Be encouraging, insightful, and conversational. Keep responses concise and focused.
 
-User's Assessment Results:
+User's Profile:
+- Background: ${bgContext}
 - Top Recommended Careers: ${userResults?.careers?.join(', ') || 'Not available'}
 - Key Strengths: ${JSON.stringify(userResults?.scores, null, 2) || 'Not available'}`
         }
@@ -512,7 +537,8 @@ User's Assessment Results:
 
   async generateEnhancedResults(
     quantitativeScores: Record<string, number>,
-    allResponses: AssessmentResponse[]
+    allResponses: AssessmentResponse[],
+    backgroundInfo?: any
   ): Promise<{
     insights: string; // 2-3 paragraphs
     recommendations: Array<{
@@ -552,6 +578,17 @@ User's Assessment Results:
         .map(([category, score]) => `${category}: ${score.toFixed(1)}/5.0`)
         .join(', ');
 
+      let bgContext = "Not provided";
+      if (backgroundInfo) {
+        if (backgroundInfo.userType === 'professional') {
+          bgContext = `Working Professional (${backgroundInfo.details?.jobTitle}, ${backgroundInfo.details?.yearsExperience} years exp)`;
+        } else if (backgroundInfo.userType === 'student' || backgroundInfo.userType === 'graduate') {
+          bgContext = `${backgroundInfo.userType === 'student' ? 'Student' : 'Graduate'} in ${backgroundInfo.details?.fieldOfStudy} - ${backgroundInfo.details?.specialization}`;
+        } else {
+          bgContext = `Other (${backgroundInfo.details?.currentStatus})`;
+        }
+      }
+
       const messages = [
         {
           role: "system",
@@ -568,11 +605,15 @@ Ensure the output is valid JSON only, with no trailing commas or other syntax er
         {
           role: "user",
           content: `As a career counselor, analyze this user's complete 6-layer assessment.
+
+User Profile:
+- Background: ${bgContext}
+
 Quantitative Strengths (Layers 1-5): ${topStrengths}
 Qualitative Insights (Layer 6):
 ${qualitativeInsights || 'No specific qualitative insights provided yet.'}
 
-Generate the JSON response as per the system instructions.`
+Generate the JSON response as per the system instructions. Consider their background (e.g. pivoting vs specializing) in your recommendations.`
         }
       ];
 
