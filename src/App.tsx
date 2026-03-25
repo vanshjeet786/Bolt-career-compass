@@ -106,18 +106,28 @@ function App() {
 
   const saveAssessment = async (assessment: Assessment, userId: string): Promise<Assessment | null> => {
     try {
+      // Prepare the assessment data, handling backgroundInfo safely
+      const assessmentData: any = {
+        user_id: userId,
+        completed_at: assessment.completedAt.toISOString(),
+        scores: assessment.scores,
+        recommended_careers: assessment.recommendedCareers,
+        ml_prediction: assessment.mlPrediction,
+        status: 'completed'
+      };
+
+      // Only include background_info if it exists and is not empty
+      if (assessment.backgroundInfo && Object.keys(assessment.backgroundInfo).length > 0) {
+        assessmentData.background_info = assessment.backgroundInfo;
+      } else {
+        // Set to empty object to avoid NULL issues in the database
+        assessmentData.background_info = {};
+      }
+
       // 1. Save the main assessment record and get the full record back
       const { data: savedAssessment, error: assessmentError } = await supabase
         .from('assessments')
-        .insert({
-          user_id: userId,
-          completed_at: assessment.completedAt.toISOString(),
-          scores: assessment.scores,
-          recommended_careers: assessment.recommendedCareers,
-          ml_prediction: assessment.mlPrediction,
-          background_info: assessment.backgroundInfo,
-          status: 'completed'
-        })
+        .insert(assessmentData)
         .select('*')
         .single();
 
@@ -127,14 +137,24 @@ function App() {
       const assessmentId = savedAssessment.id;
 
       // 2. Prepare and save all the assessment responses
-      const responsesToInsert = assessment.responses.map(response => ({
-        assessment_id: assessmentId,
-        question_id: response.questionId,
-        question_text: response.questionText,
-        response_value: response.response,
-        category_id: response.categoryId,
-        layer_number: parseInt(response.layerId.replace('layer', ''), 10)
-      }));
+      if (!assessment.responses || assessment.responses.length === 0) {
+        throw new Error("Assessment must have at least one response");
+      }
+
+      const responsesToInsert = assessment.responses.map(response => {
+        const layerNumber = parseInt(response.layerId.replace('layer', ''), 10);
+        if (isNaN(layerNumber)) {
+          throw new Error(`Invalid layer ID format: ${response.layerId}`);
+        }
+        return {
+          assessment_id: assessmentId,
+          question_id: response.questionId,
+          question_text: response.questionText,
+          response_value: response.response,
+          category_id: response.categoryId,
+          layer_number: layerNumber
+        };
+      });
 
       const { error: responsesError } = await supabase
         .from('assessment_responses')
