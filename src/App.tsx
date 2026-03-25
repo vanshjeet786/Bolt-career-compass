@@ -29,6 +29,7 @@ function App() {
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [userAssessments, setUserAssessments] = useState<Assessment[]>([]);
   const [backgroundInfo, setBackgroundInfo] = useState<any>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Create a ref to hold the user object to prevent stale closures in subscriptions
   const userRef = useRef(user);
@@ -67,13 +68,28 @@ function App() {
       if (error) throw error;
 
       const formattedAssessments: Assessment[] = assessmentsData.map(assessment => {
-        const responses: AssessmentResponse[] = assessment.assessment_responses.map((r: any) => ({
-          layerId: `layer${r.layer_number}`,
-          categoryId: r.category_id,
-          questionId: r.question_id,
-          questionText: r.question_text,
-          response: r.response_value,
-        }));
+        const responses: AssessmentResponse[] = assessment.assessment_responses.map((r: any) => {
+          let parsedResponse = r.response_value;
+          // Try to parse the response if it's a stringified JSON (like an array)
+          if (typeof parsedResponse === 'string') {
+            try {
+              const parsed = JSON.parse(parsedResponse);
+              if (Array.isArray(parsed) || typeof parsed === 'object') {
+                parsedResponse = parsed;
+              }
+            } catch (e) {
+              // It's just a normal string, do nothing
+            }
+          }
+
+          return {
+            layerId: `layer${r.layer_number}`,
+            categoryId: r.category_id,
+            questionId: r.question_id,
+            questionText: r.question_text,
+            response: parsedResponse,
+          };
+        });
 
         // Recalculate scores and recommendations to ensure data integrity,
         // but prefer the stored values if they exist AND are sufficient (at least 8 careers).
@@ -146,11 +162,18 @@ function App() {
         if (isNaN(layerNumber)) {
           throw new Error(`Invalid layer ID format: ${response.layerId}`);
         }
+        // Supabase expects valid JSON for jsonb columns. Primitive types might work natively,
+        // but passing arrays directly can cause silent failures or DB insertion errors
+        // depending on the PostgREST translation.
+        const responseValue = Array.isArray(response.response)
+          ? JSON.stringify(response.response)
+          : response.response;
+
         return {
           assessment_id: assessmentId,
           question_id: response.questionId,
           question_text: response.questionText,
-          response_value: response.response,
+          response_value: responseValue,
           category_id: response.categoryId,
           layer_number: layerNumber
         };
@@ -297,7 +320,7 @@ function App() {
       } else {
         // Handle the case where the assessment fails to save
         console.error("Could not save assessment. Cannot proceed to results.");
-        // Optionally, show an error message to the user here
+        setSaveError("Failed to save your assessment. Please check your internet connection and try again.");
         return;
       }
     } else {
@@ -395,11 +418,29 @@ function App() {
         )}
 
         {currentState === 'assessment' && user && (
-          <AssessmentPage
-            user={user}
-            onComplete={handleAssessmentComplete}
-            previousAssessments={userAssessments}
-          />
+          <>
+            {saveError && (
+              <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md bg-red-50 border border-red-200 p-4 rounded-xl shadow-lg flex items-start">
+                <div className="flex-1">
+                  <h3 className="text-red-800 font-bold mb-1">Error Saving Assessment</h3>
+                  <p className="text-red-600 text-sm">{saveError}</p>
+                </div>
+                <button
+                  onClick={() => setSaveError(null)}
+                  className="text-red-400 hover:text-red-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <AssessmentPage
+              user={user}
+              onComplete={handleAssessmentComplete}
+              previousAssessments={userAssessments}
+            />
+          </>
         )}
 
         {currentState === 'results' && currentAssessment && user && (
