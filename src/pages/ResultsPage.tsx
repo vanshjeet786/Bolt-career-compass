@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll } from 'lucide-react';
 import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
@@ -27,7 +27,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   const [sortBy, setSortBy] = useState<'match' | 'salary' | 'name'>('match');
   const [filterBy, setFilterBy] = useState<'all' | 'high-growth' | 'high-salary'>('all');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'detailed' | 'progress'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'detailed' | 'progress' | 'analytics'>('overview');
   const [aiEnhancedResults, setAiEnhancedResults] = useState<{
     insights: string;
     recommendations: Array<{ // 5-7 recommendations
@@ -118,10 +118,11 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
       switch (sortBy) {
         case 'match':
           return b.match - a.match;
-        case 'salary':
+        case 'salary': {
           const aSalary = parseInt(a.salaryRange.match(/\$(\d+)k/)?.[1] || '0');
           const bSalary = parseInt(b.salaryRange.match(/\$(\d+)k/)?.[1] || '0');
           return bSalary - aSalary;
+        }
         case 'name':
           return a.name.localeCompare(b.name);
         default:
@@ -219,6 +220,78 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
     return { improvements, declines, totalAssessments: assessmentNumber };
   };
   const progressAnalysis = getProgressAnalysis();
+
+  const analyticsSummary = useMemo(() => {
+    const entries = Object.entries(numericalScores);
+    if (!entries.length) {
+      return {
+        averageScore: 0,
+        highestScore: 0,
+        lowestScore: 0,
+        consistencyScore: 0,
+        strongestCategory: 'N/A'
+      };
+    }
+
+    const scores = entries.map(([, score]) => score);
+    const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    const highestScore = Math.max(...scores);
+    const lowestScore = Math.min(...scores);
+    const consistencyScore = Math.max(0, 100 - ((highestScore - lowestScore) / 5) * 100);
+    const strongestCategory = entries.sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+
+    return {
+      averageScore,
+      highestScore,
+      lowestScore,
+      consistencyScore,
+      strongestCategory
+    };
+  }, [numericalScores]);
+
+  const topAptitudesForAnalytics = useMemo(() => {
+    return Object.entries(numericalScores)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 6)
+      .map(([label, score]) => ({
+        label: label.length > 16 ? `${label.substring(0, 16)}...` : label,
+        fullLabel: label,
+        score
+      }));
+  }, [numericalScores]);
+
+  const topCareersForComparison = useMemo(() => {
+    return careerRecommendations.slice(0, 3);
+  }, [careerRecommendations]);
+
+  const roadmapPhases = useMemo(() => {
+    const enhancedRecommendations = aiEnhancedResults?.recommendations || [];
+    const shortTerm = enhancedRecommendations.flatMap((rec) => rec.nextSteps.slice(0, 1));
+    const mediumTerm = enhancedRecommendations.flatMap((rec) => rec.nextSteps.slice(1, 2));
+    const longTerm = enhancedRecommendations.flatMap((rec) => rec.nextSteps.slice(2, 3));
+
+    return [
+      {
+        phase: 'Short Term',
+        timeframe: '0-3 months',
+        color: 'border-blue-500',
+        items: shortTerm.slice(0, 4)
+      },
+      {
+        phase: 'Medium Term',
+        timeframe: '3-12 months',
+        color: 'border-amber-500',
+        items: mediumTerm.slice(0, 4)
+      },
+      {
+        phase: 'Long Term',
+        timeframe: '1-3 years',
+        color: 'border-emerald-500',
+        items: longTerm.slice(0, 4)
+      }
+    ];
+  }, [aiEnhancedResults]);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 text-gray-900">
       <div className="container mx-auto px-4">
@@ -272,7 +345,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'detailed', label: 'Detailed Analysis', icon: PieChart },
-              { id: 'progress', label: 'Progress Tracking', icon: Activity }
+              { id: 'progress', label: 'Progress Tracking', icon: Activity },
+              { id: 'analytics', label: 'Analytics', icon: TrendingUp }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -459,6 +533,137 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                       <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                       <h3 className="text-xl font-bold text-gray-500 mb-2 font-heading">First Assessment Complete!</h3>
                       <p className="text-gray-400 font-sans">Take another assessment in the future to track your progress and growth.</p>
+                    </Card>
+                  )}
+                </div>
+              </>
+            )}
+
+
+            {activeTab === 'analytics' && (
+              <>
+                <div className="space-y-6">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-6 font-heading">Analytics Dashboard</h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <Card className="bg-white border-gray-100">
+                      <p className="text-sm text-gray-500 font-sans">Average Score</p>
+                      <p className="text-3xl font-bold text-primary-700 font-heading">{analyticsSummary.averageScore.toFixed(2)}</p>
+                    </Card>
+                    <Card className="bg-white border-gray-100">
+                      <p className="text-sm text-gray-500 font-sans">Strongest Area</p>
+                      <p className="text-xl font-bold text-secondary-700 font-heading">{analyticsSummary.strongestCategory}</p>
+                    </Card>
+                    <Card className="bg-white border-gray-100">
+                      <p className="text-sm text-gray-500 font-sans">Peak Score</p>
+                      <p className="text-3xl font-bold text-green-700 font-heading">{analyticsSummary.highestScore.toFixed(2)}</p>
+                    </Card>
+                    <Card className="bg-white border-gray-100">
+                      <p className="text-sm text-gray-500 font-sans">Profile Consistency</p>
+                      <p className="text-3xl font-bold text-amber-700 font-heading">{analyticsSummary.consistencyScore.toFixed(0)}%</p>
+                    </Card>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="bg-white border-gray-100">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 font-heading">Top Aptitudes & Skills</h3>
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={topAptitudesForAnalytics} margin={{ top: 20, right: 20, left: 20, bottom: 40 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="label" angle={-35} textAnchor="end" interval={0} height={70} fontSize={12} />
+                            <YAxis domain={[0, 5]} />
+                            <Tooltip formatter={(value: number, _name: string, props: { payload?: { fullLabel?: string } }) => [`${Number(value).toFixed(1)}/5.0`, props.payload?.fullLabel || 'Category']} />
+                            <Bar dataKey="score" fill="#4f46e5" radius={[6, 6, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </Card>
+
+                    <Card className="bg-white border-gray-100">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 font-heading">Base vs AI-Enhanced Comparison</h3>
+                      {aiEnhancedResults ? (
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart
+                              data={aiEnhancedResults.visualizationData.labels.map((label, i) => ({
+                                label: label.length > 12 ? `${label.substring(0, 12)}...` : label,
+                                fullLabel: label,
+                                base: aiEnhancedResults.visualizationData.baseScores[i] || 0,
+                                enhanced: aiEnhancedResults.visualizationData.enhancedScores[i] || 0
+                              }))}
+                            >
+                              <PolarGrid />
+                              <PolarAngleAxis dataKey="label" fontSize={11} />
+                              <PolarRadiusAxis angle={90} domain={[0, 5]} tickCount={6} />
+                              <Radar name="Base" dataKey="base" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.3} />
+                              <Radar name="AI Enhanced" dataKey="enhanced" stroke="#10b981" fill="#10b981" fillOpacity={0.25} />
+                              <Legend />
+                              <Tooltip formatter={(value: number, _name: string, props: { payload?: { fullLabel?: string } }) => [`${Number(value).toFixed(1)}/5.0`, props.payload?.fullLabel || 'Category']} />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-amber-50 border border-amber-100 p-4 text-sm text-amber-800 font-sans">
+                          Generate AI-Enhanced Analysis to unlock comparison analytics.
+                        </div>
+                      )}
+                    </Card>
+                  </div>
+
+                  <Card className="bg-white border-gray-100">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 font-heading">Top Match Comparison Matrix</h3>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-left text-sm">
+                        <thead>
+                          <tr className="text-gray-500 border-b border-gray-200">
+                            <th className="py-3 pr-4">Factor</th>
+                            {topCareersForComparison.map((career) => (
+                              <th key={career.name} className="py-3 pr-4">{career.name}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="text-gray-700">
+                          <tr className="border-b border-gray-100">
+                            <td className="py-3 pr-4 font-medium">Match</td>
+                            {topCareersForComparison.map((career) => (
+                              <td key={`${career.name}-match`} className="py-3 pr-4">{Math.round(career.match * 100)}%</td>
+                            ))}
+                          </tr>
+                          <tr className="border-b border-gray-100">
+                            <td className="py-3 pr-4 font-medium">Salary Range</td>
+                            {topCareersForComparison.map((career) => (
+                              <td key={`${career.name}-salary`} className="py-3 pr-4">{career.salaryRange}</td>
+                            ))}
+                          </tr>
+                          <tr>
+                            <td className="py-3 pr-4 font-medium">Education</td>
+                            {topCareersForComparison.map((career) => (
+                              <td key={`${career.name}-edu`} className="py-3 pr-4">{career.education}</td>
+                            ))}
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+
+                  {roadmapPhases.some((phase) => phase.items.length > 0) && (
+                    <Card className="bg-white border-gray-100">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 font-heading">Career Transition Roadmap</h3>
+                      <div className="space-y-4">
+                        {roadmapPhases.map((phase) => (
+                          <div key={phase.phase} className={`border-l-4 ${phase.color} bg-gray-50 rounded-r-xl p-4`}>
+                            <p className="font-semibold text-gray-900 font-heading">{phase.phase} • <span className="text-gray-500 text-sm">{phase.timeframe}</span></p>
+                            {phase.items.length ? (
+                              <ul className="list-disc list-inside mt-2 text-sm text-gray-700 space-y-1 font-sans">
+                                {phase.items.map((item, index) => <li key={`${phase.phase}-${index}`}>{item}</li>)}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-gray-500 mt-2 font-sans">Generate AI-enhanced results to personalize this phase.</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </Card>
                   )}
                 </div>
