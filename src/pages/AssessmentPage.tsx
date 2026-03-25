@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../services/supabaseClient';
 import { ASSESSMENT_LAYERS } from '../data/assessmentLayers';
 import DynamicBackground from '../components/Layout/DynamicBackground';
 import { AssessmentProgress } from '../components/Assessment/AssessmentProgress';
@@ -44,6 +43,25 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   const [scores, setScores] = useState<Record<string, number>>(initialState?.scores || {});
   const [headerFont, setHeaderFont] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Request timed out after ${timeoutMs / 1000} seconds`));
+      }, timeoutMs);
+
+      promise
+        .then((result) => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        });
+    });
+  };
 
   useEffect(() => {
     // Select a random font on component mount
@@ -87,6 +105,9 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   };
 
   const handleLayerComplete = async () => {
+    if (isSubmitting) return;
+    setSubmissionError(null);
+
     const updatedCompletedLayers = [...completedLayers, currentLayer.id];
     setCompletedLayers(updatedCompletedLayers);
     
@@ -97,22 +118,28 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
       setCurrentLayerIndex(prev => prev + 1);
     } else {
       setIsSubmitting(true);
-      // Assessment complete
-      const finalScores = calculateScores(responses);
-      const recommendedCareers = generateCareerRecommendations(finalScores);
-      const assessment: Assessment = {
-        id: Date.now().toString(),
-        userId: user.id,
-        completedAt: new Date(),
-        responses,
-        scores: finalScores,
-        recommendedCareers,
-        mlPrediction: recommendedCareers[0] // Simple prediction for demo
-      };
+      try {
+        // Assessment complete
+        const finalScores = calculateScores(responses);
+        const recommendedCareers = generateCareerRecommendations(finalScores);
+        const assessment: Assessment = {
+          id: Date.now().toString(),
+          userId: user.id,
+          completedAt: new Date(),
+          responses,
+          scores: finalScores,
+          recommendedCareers,
+          mlPrediction: recommendedCareers[0] // Simple prediction for demo
+        };
 
-      localStorage.removeItem(`inProgressAssessment_${user.id}`);
-      await onComplete(assessment);
-      setIsSubmitting(false);
+        localStorage.removeItem(`inProgressAssessment_${user.id}`);
+        await withTimeout(Promise.resolve(onComplete(assessment)), 30000);
+      } catch (error) {
+        console.error('Failed to complete assessment:', error);
+        setSubmissionError('We could not finish your assessment right now. Please check your connection and try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -152,6 +179,11 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
           </div>
           {/* Assessment Content */}
           <div className="lg:col-span-3">
+            {submissionError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                {submissionError}
+              </div>
+            )}
             <AssessmentLayerComponent
               layer={currentLayer}
               responses={layerResponses}
