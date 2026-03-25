@@ -47,15 +47,20 @@ export const generateCareerRecommendations = (scores: Record<string, number>): s
       'Human Resources Manager',
       'Registered Nurse',
       'Content Creator',
-      'UX/UI Designer'
+      'UX/UI Designer',
+      'Data Scientist',
+      'Product Manager'
     ];
 
-    for (const career of generalCareers) {
-      recommendations.add(career);
-      if (recommendations.size >= 8) break;
+    // Simply add from general careers until we hit 8 or run out of options
+    // without risking an infinite loop if the set size doesn't change
+    let i = 0;
+    while (recommendations.size < 8 && i < generalCareers.length) {
+      recommendations.add(generalCareers[i]);
+      i++;
     }
   }
 
-  // Convert set to array and limit to a reasonable number (e.g., 8-12)
+  // Convert set to array and limit to a reasonable number (e.g., 8-10)
   return Array.from(recommendations).slice(0, 10);
 };

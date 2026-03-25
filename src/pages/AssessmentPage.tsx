@@ -19,7 +19,7 @@ const headerFonts = [
 
 interface AssessmentPageProps {
   user: User;
-  onComplete: (assessment: Assessment) => void;
+  onComplete: (assessment: Assessment) => void | Promise<void>;
   previousAssessments?: Assessment[];
 }
 
@@ -43,6 +43,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
   const [completedLayers, setCompletedLayers] = useState<string[]>(initialState?.completedLayers || []);
   const [scores, setScores] = useState<Record<string, number>>(initialState?.scores || {});
   const [headerFont, setHeaderFont] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Select a random font on component mount
@@ -85,7 +86,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
     });
   };
 
-  const handleLayerComplete = () => {
+  const handleLayerComplete = async () => {
     const updatedCompletedLayers = [...completedLayers, currentLayer.id];
     setCompletedLayers(updatedCompletedLayers);
     
@@ -95,6 +96,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
     if (currentLayerIndex < ASSESSMENT_LAYERS.length - 1) {
       setCurrentLayerIndex(prev => prev + 1);
     } else {
+      setIsSubmitting(true);
       // Assessment complete
       const finalScores = calculateScores(responses);
       const recommendedCareers = generateCareerRecommendations(finalScores);
@@ -109,7 +111,8 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
       };
 
       localStorage.removeItem(`inProgressAssessment_${user.id}`);
-      onComplete(assessment);
+      await onComplete(assessment);
+      setIsSubmitting(false);
     }
   };
 
@@ -161,6 +164,7 @@ export const AssessmentPage: React.FC<AssessmentPageProps> = ({ user, onComplete
               allUserResponses={responses}
               previousAnswers={previousAnswers}
               headerFont={headerFont}
+              isSubmitting={isSubmitting}
             />
           </div>
         </div>

@@ -17,6 +17,7 @@ interface AssessmentLayerProps {
   allUserResponses?: AssessmentResponse[];
   previousAnswers?: Map<string, any>;
   headerFont?: string;
+  isSubmitting?: boolean;
 }
 
 export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
@@ -31,6 +32,7 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
   allUserResponses,
   previousAnswers,
   headerFont,
+  isSubmitting = false,
 }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -135,8 +137,9 @@ export const AssessmentLayerComponent: React.FC<AssessmentLayerProps> = ({
         
         <Button
           onClick={handleNext}
-          disabled={!canGoNext}
+          disabled={!canGoNext || isSubmitting}
           icon={!isLastQuestion ? ArrowRight : undefined}
+          loading={isSubmitting}
         >
           {isLastQuestion ? 'Complete Layer' : 'Next Question'}
         </Button>
