@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll } from 'lucide-react';
+import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll, Sparkles, Brain, Star, Zap, ChevronRight } from 'lucide-react';
 import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
@@ -12,6 +12,7 @@ import { AIChat } from '../components/Results/AIChat';
 import { pdfService } from '../services/pdfService';
 import { aiService } from '../services/aiService';
 import { supabase } from '../services/supabaseClient';
+import { getFriendlyName } from '../utils/categoryNames';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface ResultsPageProps {
@@ -293,71 +294,112 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
   }, [aiEnhancedResults]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 text-gray-900">
-      <div className="container mx-auto px-4">
-        {/* Enhanced Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full mb-6 mx-auto shadow-xl">
-            <Award className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold mb-4 font-heading">
-            <span className="bg-gradient-to-r from-primary-600 to-purple-500 bg-clip-text text-transparent">
-              Your Career Assessment Results
-            </span>
-          </h1>
-          <p className="text-xl text-gray-600 mb-6 font-sans">
-            Congratulations, {user.name}! Here's your personalized career guidance.
-          </p>
-  
-          {progressAnalysis && (
-            <div className="bg-white border border-gray-200 rounded-full px-6 py-2 mb-6 inline-block shadow-sm">
-              <p className="text-primary-700 font-medium font-sans">
-                Assessment #{progressAnalysis.totalAssessments} • 
-                {progressAnalysis.improvements.length > 0 && (
-                  <span className="text-secondary-600 ml-2"> {progressAnalysis.improvements.length} areas improved</span>
-                )}
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-br from-primary-700 via-primary-600 to-purple-700 text-white overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-purple-300 rounded-full blur-3xl"></div>
+        </div>
+        <div className="container mx-auto px-4 py-16 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="text-center lg:text-left flex-1">
+              <div className="inline-flex items-center bg-white/15 backdrop-blur-sm rounded-full px-4 py-1.5 mb-4 text-sm font-medium">
+                <Sparkles className="w-4 h-4 mr-2 text-yellow-300" />
+                {progressAnalysis
+                  ? `Assessment #${progressAnalysis.totalAssessments}${progressAnalysis.improvements.length > 0 ? ` - ${progressAnalysis.improvements.length} areas improved` : ''}`
+                  : 'Your First Assessment'}
+              </div>
+              <h1 className="text-4xl lg:text-5xl font-bold mb-3 font-heading">
+                Your Career Blueprint
+              </h1>
+              <p className="text-lg text-white/80 mb-6 font-sans max-w-lg">
+                Great work, {user.name}! We've analyzed your strengths and mapped them to career paths that fit you best.
               </p>
+              <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+                <Button
+                  icon={Download}
+                  onClick={handleDownloadReport}
+                  size="md"
+                  className="bg-white text-primary-700 hover:bg-gray-100 shadow-lg border-none rounded-full"
+                >
+                  Download Report
+                </Button>
+                <Button
+                  icon={MessageCircle}
+                  onClick={() => setShowChat(!showChat)}
+                  size="md"
+                  className="bg-white/15 text-white hover:bg-white/25 border border-white/30 rounded-full backdrop-blur-sm"
+                >
+                  {showChat ? 'Hide Chat' : 'AI Counselor'}
+                </Button>
+              </div>
             </div>
-          )}
-          <div className="flex justify-center gap-4">
-            <Button
-              icon={Download}
-              onClick={handleDownloadReport}
-              variant="secondary"
-              size="lg"
-            >
-              Download PDF Report
-            </Button>
-            <Button
-              icon={MessageCircle}
-              onClick={() => setShowChat(!showChat)}
-              variant="outline"
-              size="lg"
-            >
-              {showChat ? 'Hide Chat' : 'Chat with AI Counselor'}
-            </Button>
+
+            {/* Score Ring */}
+            <div className="flex-shrink-0">
+              <div className="relative w-48 h-48">
+                <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="10" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGradient)" strokeWidth="10" strokeLinecap="round"
+                    strokeDasharray={`${(analyticsSummary.averageScore / 5) * 327} 327`} />
+                  <defs>
+                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#fbbf24" />
+                      <stop offset="100%" stopColor="#f59e0b" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-bold">{analyticsSummary.averageScore.toFixed(1)}</span>
+                  <span className="text-sm text-white/70">out of 5.0</span>
+                  <span className="text-xs text-white/50 mt-1">Average Score</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Stat Pills */}
+          <div className="flex flex-wrap justify-center lg:justify-start gap-3 mt-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm flex items-center">
+              <Star className="w-4 h-4 mr-2 text-yellow-300" />
+              <span className="text-white/70 mr-1">Top Strength:</span>
+              <span className="font-semibold">{getFriendlyName(analyticsSummary.strongestCategory)}</span>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm flex items-center">
+              <Zap className="w-4 h-4 mr-2 text-yellow-300" />
+              <span className="text-white/70 mr-1">Peak Score:</span>
+              <span className="font-semibold">{analyticsSummary.highestScore.toFixed(1)}/5.0</span>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-sm flex items-center">
+              <Target className="w-4 h-4 mr-2 text-yellow-300" />
+              <span className="text-white/70 mr-1">Career Matches:</span>
+              <span className="font-semibold">{careerRecommendations.length}</span>
+            </div>
           </div>
         </div>
+      </div>
 
+      <div className="container mx-auto px-4 py-8">
         {/* Navigation Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-2xl shadow-sm p-2 inline-flex border border-gray-100">
+        <div className="flex justify-center mb-8 -mt-6">
+          <div className="bg-white rounded-2xl shadow-lg p-1.5 inline-flex border border-gray-100 flex-wrap justify-center gap-1">
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'detailed', label: 'Detailed Analysis', icon: PieChart },
-              { id: 'progress', label: 'Progress Tracking', icon: Activity },
+              { id: 'progress', label: 'Progress', icon: Activity },
               { id: 'analytics', label: 'Analytics', icon: TrendingUp }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                className={`flex items-center px-5 py-2.5 rounded-xl font-medium transition-all duration-200 text-sm ${
                   activeTab === tab.id
-                    ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-md'
                     : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                <tab.icon className="w-4 h-4 mr-2" />
+                <tab.icon className="w-4 h-4 mr-1.5" />
                 {tab.label}
               </button>
             ))}
@@ -368,24 +410,89 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           <div className="lg:col-span-3 space-y-8">
             {activeTab === 'overview' && (
               <>
+                {/* Top Strengths - Visual Cards */}
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1 font-heading flex items-center">
+                    <Award className="w-6 h-6 mr-2 text-primary-600" />
+                    Your Top Strengths
+                  </h2>
+                  <p className="text-gray-500 text-sm mb-5 font-sans ml-8">What you're naturally great at</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {getTopStrengths().slice(0, 3).map(([category, score], index) => {
+                      const colors = [
+                        { bg: 'from-blue-500 to-indigo-600', light: 'bg-blue-50 border-blue-100', text: 'text-blue-700', bar: 'from-blue-400 to-indigo-500' },
+                        { bg: 'from-purple-500 to-pink-600', light: 'bg-purple-50 border-purple-100', text: 'text-purple-700', bar: 'from-purple-400 to-pink-500' },
+                        { bg: 'from-amber-500 to-orange-600', light: 'bg-amber-50 border-amber-100', text: 'text-amber-700', bar: 'from-amber-400 to-orange-500' },
+                      ];
+                      const color = colors[index];
+                      return (
+                        <div key={category} className={`relative rounded-2xl border ${color.light} p-5 overflow-hidden`}>
+                          <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${color.bg} opacity-10 rounded-bl-full`}></div>
+                          <div className="flex items-center mb-3">
+                            <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${color.bg} flex items-center justify-center text-white text-sm font-bold shadow-sm`}>
+                              {index + 1}
+                            </div>
+                            <span className="ml-2 text-xs font-medium text-gray-400 uppercase tracking-wider">Strength</span>
+                          </div>
+                          <h3 className={`text-lg font-bold ${color.text} mb-1 font-heading`}>{getFriendlyName(category)}</h3>
+                          <p className="text-xs text-gray-400 mb-3 font-sans">{category}</p>
+                          <div className="flex items-end justify-between">
+                            <div className="flex-1 mr-3">
+                              <div className="w-full bg-gray-100 rounded-full h-2">
+                                <div className={`bg-gradient-to-r ${color.bar} h-2 rounded-full transition-all duration-700`}
+                                  style={{ width: `${((score as number) / 5) * 100}%` }} />
+                              </div>
+                            </div>
+                            <span className={`text-xl font-bold ${color.text} font-heading`}>{(score as number).toFixed(1)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* All Strengths at a Glance */}
+                <Card className="bg-white border-gray-100">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4 font-heading flex items-center">
+                    <Brain className="w-5 h-5 mr-2 text-primary-600" />
+                    Complete Strengths Profile
+                  </h3>
+                  <div className="space-y-3">
+                    {getTopStrengths().map(([category, score]) => (
+                      <div key={category} className="flex items-center group">
+                        <div className="w-44 flex-shrink-0">
+                          <p className="text-sm font-medium text-gray-800 group-hover:text-primary-700 transition-colors">{getFriendlyName(category)}</p>
+                        </div>
+                        <div className="flex-1 mx-4">
+                          <div className="w-full bg-gray-100 rounded-full h-2.5">
+                            <div className="bg-gradient-to-r from-primary-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
+                              style={{ width: `${((score as number) / 5) * 100}%` }} />
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-gray-700 w-12 text-right">{(score as number).toFixed(1)}/5</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
                 {/* AI Insights */}
-                <Card className="bg-white border-primary-100">
+                <Card className="bg-gradient-to-br from-primary-50 to-purple-50 border-primary-100">
                   <div className="flex items-start">
-                    <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-3 rounded-full mr-4 shadow-lg">
-                      <Lightbulb className="w-6 h-6 text-white" />
+                    <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-3 rounded-2xl mr-4 shadow-lg flex-shrink-0">
+                      <Lightbulb className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-4 font-heading">AI Counselor Insights</h2>
+                      <h2 className="text-xl font-bold text-gray-900 mb-3 font-heading">AI Counselor Insights</h2>
                       {loading ? (
-                        <div className="animate-pulse space-y-4">
-                          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                        <div className="animate-pulse space-y-3">
+                          <div className="h-4 bg-primary-100 rounded w-3/4"></div>
+                          <div className="h-4 bg-primary-100 rounded w-1/2"></div>
+                          <div className="h-4 bg-primary-100 rounded w-5/6"></div>
                         </div>
                       ) : (
-                        <div className="prose max-w-none text-gray-600 font-sans">
+                        <div className="prose max-w-none text-gray-600 font-sans text-sm leading-relaxed">
                           {aiInsights.split('\n').map((paragraph, index) => (
-                            <p key={index} className="mb-4">{paragraph}</p>
+                            paragraph.trim() && <p key={index} className="mb-3">{paragraph}</p>
                           ))}
                         </div>
                       )}
@@ -393,26 +500,12 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                   </div>
                 </Card>
 
-                {/* Top Strengths Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {getTopStrengths().slice(0, 3).map(([category, score], index) => (
-                    <Card key={category} className="text-center bg-white border-gray-100">
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full mb-4 shadow-lg">
-                        <Target className="w-6 h-6 text-white" />
-                      </div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 font-heading">#{index + 1} Strength</h3>
-                      <p className="text-primary-600 font-semibold font-sans">{category}</p>
-                      <p className="text-2xl font-bold text-primary-700 mt-2 font-sans">{(score as number).toFixed(1)}/5.0</p>
-                    </Card>
-                  ))}
-                </div>
-
                 {/* Strengths Visualization */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <ResultsChart
                     scores={numericalScores}
                     type="bar"
-                    title="Your Intelligence Strengths"
+                    title="Your Strengths Breakdown"
                   />
                   <ResultsChart
                     scores={numericalScores}
@@ -506,7 +599,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                               <div className="space-y-2">
                                 {progressAnalysis.improvements.map(({ category, change }) => (
                                   <div key={category} className="flex items-center justify-between bg-white p-3 rounded-xl border border-green-100 shadow-sm">
-                                    <span className="text-gray-700 font-sans">{category}</span>
+                                    <span className="text-gray-700 font-sans">{getFriendlyName(category)}</span>
                                     <span className="text-green-600 font-bold font-sans">+{change.toFixed(1)}</span>
                                   </div>
                                 ))}
@@ -552,7 +645,7 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                     </Card>
                     <Card className="bg-white border-gray-100">
                       <p className="text-sm text-gray-500 font-sans">Strongest Area</p>
-                      <p className="text-xl font-bold text-secondary-700 font-heading">{analyticsSummary.strongestCategory}</p>
+                      <p className="text-xl font-bold text-secondary-700 font-heading">{getFriendlyName(analyticsSummary.strongestCategory)}</p>
                     </Card>
                     <Card className="bg-white border-gray-100">
                       <p className="text-sm text-gray-500 font-sans">Peak Score</p>
@@ -773,9 +866,9 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           {/* Instructional Paragraph */}
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 mb-8">
             <p className="text-gray-700 leading-relaxed font-sans">
-              <strong className="text-blue-700">About Your Results:</strong> The above results are calculated using your quantitative responses from Layers 1-5 (Multiple Intelligences, Personality Traits, Aptitudes & Skills, Background & Environment, and Interests & Values).
-              Layer 6's open-ended responses have been used qualitatively to inform and train the AI for more personalized 
-              guidance in the chat section and enhanced analysis below.
+              <strong className="text-blue-700">How Your Results Work:</strong> Your scores are calculated from your responses across five areas: intelligences, personality, skills, background, and interests.
+              Your written reflections from the self-assessment section are used by the AI to provide more personalized
+              guidance in the chat and enhanced analysis below.
             </p>
           </div>
 

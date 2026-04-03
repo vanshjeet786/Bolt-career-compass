@@ -8,29 +8,42 @@ import { INDIAN_DEGREES, SPECIALIZATIONS, JOB_TITLES, USER_TYPES } from '../data
 interface BackgroundInfoPageProps {
   onComplete: (data: any) => void;
   onBack: () => void;
+  savedBackgroundInfo?: {
+    userType: string;
+    details: {
+      jobTitle?: string;
+      yearsExperience?: string;
+      fieldOfStudy?: string;
+      specialization?: string;
+      currentStatus?: string;
+    };
+  } | null;
 }
 
-export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ onComplete, onBack }) => {
-  const [userType, setUserType] = useState<string>('');
+export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ onComplete, onBack, savedBackgroundInfo }) => {
+  const [userType, setUserType] = useState<string>(savedBackgroundInfo?.userType || '');
   const [details, setDetails] = useState({
-    jobTitle: '',
-    yearsExperience: '',
-    fieldOfStudy: '',
-    specialization: '',
-    currentStatus: ''
+    jobTitle: savedBackgroundInfo?.details?.jobTitle || '',
+    yearsExperience: savedBackgroundInfo?.details?.yearsExperience || '',
+    fieldOfStudy: savedBackgroundInfo?.details?.fieldOfStudy || '',
+    specialization: savedBackgroundInfo?.details?.specialization || '',
+    currentStatus: savedBackgroundInfo?.details?.currentStatus || ''
   });
   const [showSkipModal, setShowSkipModal] = useState(false);
+  const hasSavedInfo = !!(savedBackgroundInfo?.userType);
 
   const handleTypeSelect = (type: string) => {
     setUserType(type);
-    // Reset details when type changes
-    setDetails({
-      jobTitle: '',
-      yearsExperience: '',
-      fieldOfStudy: '',
-      specialization: '',
-      currentStatus: ''
-    });
+    // Only reset details when type changes AND it's different from saved type
+    if (type !== savedBackgroundInfo?.userType) {
+      setDetails({
+        jobTitle: '',
+        yearsExperience: '',
+        fieldOfStudy: '',
+        specialization: '',
+        currentStatus: ''
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -89,10 +102,12 @@ export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ onComple
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-900 font-heading mb-4">
-            Help Us Know You Better
+            {hasSavedInfo ? 'Confirm Your Background' : 'Help Us Know You Better'}
           </h1>
           <p className="text-lg text-gray-600 font-sans">
-            To provide the most accurate career advice, tell us a bit about your current status.
+            {hasSavedInfo
+              ? 'We\'ve loaded your previous details. Review and update if anything has changed, or continue as-is.'
+              : 'To provide the most accurate career advice, tell us a bit about your current status.'}
           </p>
         </div>
 

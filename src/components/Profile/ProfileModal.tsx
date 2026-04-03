@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { X, User, Calendar, Award, Eye, Trash2, Download, Settings, Trash } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, User, Calendar, Award, Eye, Trash2, Download, Settings, Trash, FileText, Save, CheckCircle2 } from 'lucide-react';
 import { User as UserType, Assessment } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { ConfirmationModal } from '../ui/ConfirmationModal';
 import { supabase } from '../../services/supabaseClient';
+import { getFriendlyName } from '../../utils/categoryNames';
+import { INDIAN_DEGREES, SPECIALIZATIONS, JOB_TITLES, USER_TYPES } from '../../data/backgroundOptions';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -23,10 +25,68 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onViewResults,
   onLogout
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'assessments' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'assessments' | 'background' | 'settings'>('overview');
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showSingleDeleteModal, setShowSingleDeleteModal] = useState<string | null>(null);
+  const [bgUserType, setBgUserType] = useState('');
+  const [bgDetails, setBgDetails] = useState({
+    jobTitle: '',
+    yearsExperience: '',
+    fieldOfStudy: '',
+    specialization: '',
+    currentStatus: ''
+  });
+  const [bgSaveSuccess, setBgSaveSuccess] = useState(false);
+
+  // Load saved background info when modal opens
+  useEffect(() => {
+    if (isOpen && user) {
+      const saved = localStorage.getItem(`savedBackgroundInfo_${user.id}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          setBgUserType(parsed.userType || '');
+          setBgDetails({
+            jobTitle: parsed.details?.jobTitle || '',
+            yearsExperience: parsed.details?.yearsExperience || '',
+            fieldOfStudy: parsed.details?.fieldOfStudy || '',
+            specialization: parsed.details?.specialization || '',
+            currentStatus: parsed.details?.currentStatus || ''
+          });
+        } catch (e) {
+          console.error('Failed to parse saved background info', e);
+        }
+      } else if (assessments.length > 0 && assessments[0].backgroundInfo) {
+        const bg = assessments[0].backgroundInfo;
+        setBgUserType(bg.userType || '');
+        setBgDetails({
+          jobTitle: bg.details?.jobTitle || '',
+          yearsExperience: bg.details?.yearsExperience || '',
+          fieldOfStudy: bg.details?.fieldOfStudy || '',
+          specialization: bg.details?.specialization || '',
+          currentStatus: bg.details?.currentStatus || ''
+        });
+      }
+    }
+  }, [isOpen, user, assessments]);
+
+  const handleSaveBackgroundInfo = () => {
+    if (!user) return;
+    const data = {
+      userType: bgUserType,
+      details: {
+        jobTitle: bgUserType === 'professional' ? bgDetails.jobTitle : undefined,
+        yearsExperience: bgUserType === 'professional' ? bgDetails.yearsExperience : undefined,
+        fieldOfStudy: ['student', 'graduate'].includes(bgUserType) ? bgDetails.fieldOfStudy : undefined,
+        specialization: ['student', 'graduate'].includes(bgUserType) ? bgDetails.specialization : undefined,
+        currentStatus: bgUserType === 'other' ? bgDetails.currentStatus : undefined
+      }
+    };
+    localStorage.setItem(`savedBackgroundInfo_${user.id}`, JSON.stringify(data));
+    setBgSaveSuccess(true);
+    setTimeout(() => setBgSaveSuccess(false), 2500);
+  };
 
   if (!isOpen || !user) return null;
 
@@ -145,6 +205,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {[
               { id: 'overview', label: 'Overview', icon: User },
               { id: 'assessments', label: 'Assessments', icon: Calendar },
+              { id: 'background', label: 'Background', icon: FileText },
               { id: 'settings', label: 'Settings', icon: Settings }
             ].map((tab) => (
               <button
@@ -206,7 +267,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                             <div className="w-6 h-6 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full flex items-center justify-center mr-3">
                               <span className="text-white text-xs font-bold">{index + 1}</span>
                             </div>
-                            <span className="text-gray-800">{category}</span>
+                            <span className="text-gray-800">{getFriendlyName(category)}</span>
                           </div>
                           <span className="text-primary-600 font-bold">{(score as number).toFixed(1)}/5.0</span>
                         </div>
@@ -292,6 +353,137 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     <p className="text-gray-500">Take your first assessment to get started!</p>
                   </Card>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'background' && (
+              <div className="space-y-6">
+                {bgSaveSuccess && (
+                  <div className="flex items-center bg-green-50 border border-green-200 rounded-xl p-3 text-green-700 text-sm animate-fade-in">
+                    <CheckCircle2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                    Background info saved! It will be pre-filled in your next assessment.
+                  </div>
+                )}
+
+                <Card>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Your Background Information</h3>
+                  <p className="text-sm text-gray-500 mb-6">This information helps personalize your career recommendations. Edit and save to update your profile.</p>
+
+                  {/* User Type Selection */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">I am a...</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {USER_TYPES.map((type) => (
+                        <button
+                          key={type.id}
+                          onClick={() => {
+                            setBgUserType(type.id);
+                            if (type.id !== bgUserType) {
+                              setBgDetails({ jobTitle: '', yearsExperience: '', fieldOfStudy: '', specialization: '', currentStatus: '' });
+                            }
+                          }}
+                          className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                            bgUserType === type.id
+                              ? 'border-primary-500 bg-primary-50 text-primary-700'
+                              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                          }`}
+                        >
+                          {type.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dynamic Fields */}
+                  {bgUserType === 'professional' && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                        <select
+                          value={bgDetails.jobTitle}
+                          onChange={(e) => setBgDetails(prev => ({ ...prev, jobTitle: e.target.value }))}
+                          className="block w-full rounded-lg border-gray-300 bg-white py-2.5 px-3 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                        >
+                          <option value="">Select your job title...</option>
+                          {JOB_TITLES.map(job => (
+                            <option key={job} value={job}>{job}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
+                        <input
+                          type="number"
+                          value={bgDetails.yearsExperience}
+                          onChange={(e) => setBgDetails(prev => ({ ...prev, yearsExperience: e.target.value }))}
+                          min="0" max="50" placeholder="e.g. 5"
+                          className="block w-full rounded-lg border-gray-300 py-2.5 px-3 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(bgUserType === 'student' || bgUserType === 'graduate') && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Field of Study / Degree</label>
+                        <select
+                          value={bgDetails.fieldOfStudy}
+                          onChange={(e) => setBgDetails(prev => ({ ...prev, fieldOfStudy: e.target.value }))}
+                          className="block w-full rounded-lg border-gray-300 bg-white py-2.5 px-3 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                        >
+                          <option value="">Select your degree...</option>
+                          {INDIAN_DEGREES.map(degree => (
+                            <option key={degree} value={degree}>{degree}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Specialization / Major</label>
+                        <select
+                          value={bgDetails.specialization}
+                          onChange={(e) => setBgDetails(prev => ({ ...prev, specialization: e.target.value }))}
+                          className="block w-full rounded-lg border-gray-300 bg-white py-2.5 px-3 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                        >
+                          <option value="">Select your specialization...</option>
+                          {SPECIALIZATIONS.map(spec => (
+                            <option key={spec} value={spec}>{spec}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {bgUserType === 'other' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Status</label>
+                      <textarea
+                        value={bgDetails.currentStatus}
+                        onChange={(e) => setBgDetails(prev => ({ ...prev, currentStatus: e.target.value }))}
+                        rows={3} placeholder="Describe your current situation..."
+                        className="block w-full rounded-lg border-gray-300 py-2.5 px-3 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {bgUserType && (
+                    <div className="mt-6 pt-4 border-t border-gray-100">
+                      <Button
+                        icon={Save}
+                        onClick={handleSaveBackgroundInfo}
+                        className="w-full"
+                      >
+                        Save Background Info
+                      </Button>
+                    </div>
+                  )}
+
+                  {!bgUserType && (
+                    <div className="text-center py-4 text-gray-400 text-sm">
+                      Select a category above to view and edit your background details.
+                    </div>
+                  )}
+                </Card>
               </div>
             )}
 
