@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll, Sparkles, Brain, Star, Zap, ChevronRight } from 'lucide-react';
+import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll, Sparkles, Brain, Star, Zap } from 'lucide-react';
 import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
