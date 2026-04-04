@@ -256,12 +256,19 @@ function App() {
 
         const inProgressAssessment = localStorage.getItem(`inProgressAssessment_${user.id}`);
         const savedBackgroundInfo = localStorage.getItem(`backgroundInfo_${user.id}`);
+        const persistentBackgroundInfo = localStorage.getItem(`savedBackgroundInfo_${user.id}`);
 
         if (savedBackgroundInfo) {
           try {
             setBackgroundInfo(JSON.parse(savedBackgroundInfo));
           } catch (e) {
             console.error('Failed to parse background info', e);
+          }
+        } else if (persistentBackgroundInfo) {
+          try {
+            setBackgroundInfo(JSON.parse(persistentBackgroundInfo));
+          } catch (e) {
+            console.error('Failed to parse persistent background info', e);
           }
         }
 
@@ -352,7 +359,21 @@ function App() {
       localStorage.removeItem(`backgroundInfo_${user.id}`);
     }
     setCurrentAssessment(null);
-    setBackgroundInfo(null);
+    // Load persistent background info if available, so the form is pre-populated
+    if (user) {
+      const persistentInfo = localStorage.getItem(`savedBackgroundInfo_${user.id}`);
+      if (persistentInfo) {
+        try {
+          setBackgroundInfo(JSON.parse(persistentInfo));
+        } catch (e) {
+          setBackgroundInfo(null);
+        }
+      } else {
+        setBackgroundInfo(null);
+      }
+    } else {
+      setBackgroundInfo(null);
+    }
     setCurrentState('background_info');
   };
 
@@ -442,6 +463,7 @@ function App() {
             user={user}
             onComplete={handleBackgroundInfoComplete}
             onBack={handleBackToDashboard}
+            savedBackgroundInfo={backgroundInfo || (userAssessments.length > 0 ? userAssessments[0].backgroundInfo : null)}
           />
         )}
 
