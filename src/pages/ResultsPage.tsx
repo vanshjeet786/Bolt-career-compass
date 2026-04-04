@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll, Sparkles, Brain, Star, Zap } from 'lucide-react';
+import { Download, MessageCircle, Filter, ArrowUpDown, ExternalLink, TrendingUp, Award, Target, BookOpen, Users, Lightbulb, BarChart3, PieChart, Activity, Loader2, SaveAll, Sparkles, Brain, Star, Zap, HelpCircle } from 'lucide-react';
 import { Assessment, CareerRecommendation, User, ChatMessage } from '../types';
 import { CAREER_DETAILS } from '../data/careerMapping';
 import { Card } from '../components/ui/Card';
@@ -346,28 +346,6 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                 </Button>
               </div>
             </div>
-
-            {/* Score Ring */}
-            <div className="flex-shrink-0">
-              <div className="relative w-48 h-48">
-                <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 120 120">
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="10" />
-                  <circle cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGradient)" strokeWidth="10" strokeLinecap="round"
-                    strokeDasharray={`${(analyticsSummary.averageScore / 5) * 327} 327`} />
-                  <defs>
-                    <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#fbbf24" />
-                      <stop offset="100%" stopColor="#f59e0b" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl font-bold">{analyticsSummary.averageScore.toFixed(1)}</span>
-                  <span className="text-sm text-white/70">out of 5.0</span>
-                  <span className="text-xs text-white/50 mt-1">Average Score</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Quick Stat Pills */}
@@ -687,7 +665,16 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                       <p className="text-3xl font-bold text-green-700 font-heading">{analyticsSummary.highestScore.toFixed(2)}</p>
                     </Card>
                     <Card className="bg-white border-gray-100">
-                      <p className="text-sm text-gray-500 font-sans">Profile Consistency</p>
+                      <div className="flex items-center gap-1">
+                        <p className="text-sm text-gray-500 font-sans">Profile Consistency</p>
+                        <div className="relative group flex items-center cursor-help">
+                          <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors" />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-gray-900 text-white text-xs rounded-lg p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 shadow-xl">
+                            Measures how evenly distributed your skills are. A high score means you scored consistently (e.g., mostly 3s and 4s) across all areas. A lower score means you have sharp peaks and valleys (e.g., scoring 5s in some areas and 1s in others).
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                          </div>
+                        </div>
+                      </div>
                       <p className="text-3xl font-bold text-amber-700 font-heading">{analyticsSummary.consistencyScore.toFixed(0)}%</p>
                     </Card>
                   </div>
@@ -899,8 +886,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
           </div>
 
           {/* Instructional Paragraph */}
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 mb-8">
-            <p className="text-gray-700 leading-relaxed font-sans">
+          <div className="bg-white border-l-4 border-blue-500 shadow-sm rounded-r-2xl py-8 px-8 mb-8">
+            <p className="text-gray-700 leading-relaxed font-sans text-lg">
               <strong className="text-blue-700">How Your Results Work:</strong> Your scores are calculated from your responses across five areas: intelligences, personality, skills, background, and interests.
               Your written reflections from the self-assessment section are used by the AI to provide more personalized
               guidance in the chat and enhanced analysis below.
@@ -916,15 +903,17 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
               }}
               className="w-full text-left"
             >
-              <div className="w-full bg-gradient-to-r from-secondary-500 to-amber-500 text-white p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden group">
+              <div className="w-full bg-gradient-to-r from-secondary-500 to-amber-500 text-white py-6 px-10 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="flex items-center relative z-10">
-                  <div className="bg-white/20 p-4 rounded-full mr-6 shadow-lg backdrop-blur-sm">
-                    <Lightbulb className="w-8 h-8" />
+                  <div className="bg-white/20 p-3 rounded-full mr-5 shadow-lg backdrop-blur-sm flex-shrink-0">
+                    <Lightbulb className="w-6 h-6" />
                   </div>
-                  <div>
-                    <h2 className="text-3xl font-bold font-heading">AI-Enhanced Career Analysis</h2>
-                    <p className="text-lg opacity-90 mt-1 font-sans">Unlock personalized insights with our most powerful analysis</p>
+                  <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold font-heading">AI-Enhanced Career Analysis</h2>
+                      <p className="text-md opacity-90 mt-1 font-sans">Unlock personalized insights with our most powerful analysis</p>
+                    </div>
                   </div>
                 </div>
               </div>
