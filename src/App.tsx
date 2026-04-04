@@ -237,11 +237,12 @@ function App() {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        const { data: userProfile } = await supabase
+        // Select '*' to avoid 400 Bad Request if background_info column doesn't exist yet
+        const { data: userProfile, error: profileError } = await supabase
           .from('users')
-          .select('background_info')
+          .select('*')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
         const user = {
           id: session.user.id,
@@ -289,11 +290,11 @@ function App() {
           // A SIGNED_IN event can fire on token refresh. To prevent redirecting the user
           // from a page they are on, we only set state to dashboard if it's a new user.
           if (session.user.id !== userRef.current?.id) {
-            const { data: userProfile } = await supabase
+            const { data: userProfile, error: profileError } = await supabase
               .from('users')
-              .select('background_info')
+              .select('*')
               .eq('id', session.user.id)
-              .single();
+              .maybeSingle();
 
             const newUser = {
               id: session.user.id,
