@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import { X, User, Calendar, Award, Eye, Trash2, Download, Settings, Trash, Edit2, Save } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { X, User, Calendar, Award, Eye, Trash2, Download, Settings, Trash, FileText, Save, CheckCircle2 } from 'lucide-react';
+import { X, User, Calendar, Award, Eye, Trash2, Download, Settings, Trash, FileText, Save, CircleCheck as CheckCircle2, CreditCard as Edit2 } from 'lucide-react';
 import { User as UserType, Assessment } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
