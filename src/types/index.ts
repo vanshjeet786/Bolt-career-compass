@@ -4,6 +4,16 @@ export interface User {
   name: string;
   createdAt: Date;
   assessments: Assessment[];
+  backgroundInfo?: {
+    userType: 'professional' | 'student' | 'graduate' | 'other';
+    details?: {
+      jobTitle?: string;
+      yearsExperience?: string;
+      fieldOfStudy?: string;
+      specialization?: string;
+      currentStatus?: string;
+    };
+  };
 }
 
 export interface Assessment {

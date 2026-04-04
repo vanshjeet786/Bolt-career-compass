@@ -4,8 +4,10 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import { INDIAN_DEGREES, SPECIALIZATIONS, JOB_TITLES, USER_TYPES } from '../data/backgroundOptions';
+import { User } from '../types';
 
 interface BackgroundInfoPageProps {
+  user?: User;
   onComplete: (data: any) => void;
   onBack: () => void;
   savedBackgroundInfo?: {
@@ -20,17 +22,17 @@ interface BackgroundInfoPageProps {
   } | null;
 }
 
-export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ onComplete, onBack, savedBackgroundInfo }) => {
-  const [userType, setUserType] = useState<string>(savedBackgroundInfo?.userType || '');
+export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ user, onComplete, onBack }) => {
+  const [userType, setUserType] = useState<string>(user?.backgroundInfo?.userType || '');
   const [details, setDetails] = useState({
-    jobTitle: savedBackgroundInfo?.details?.jobTitle || '',
-    yearsExperience: savedBackgroundInfo?.details?.yearsExperience || '',
-    fieldOfStudy: savedBackgroundInfo?.details?.fieldOfStudy || '',
-    specialization: savedBackgroundInfo?.details?.specialization || '',
-    currentStatus: savedBackgroundInfo?.details?.currentStatus || ''
+    jobTitle: user?.backgroundInfo?.details?.jobTitle || '',
+    yearsExperience: user?.backgroundInfo?.details?.yearsExperience || '',
+    fieldOfStudy: user?.backgroundInfo?.details?.fieldOfStudy || '',
+    specialization: user?.backgroundInfo?.details?.specialization || '',
+    currentStatus: user?.backgroundInfo?.details?.currentStatus || ''
   });
   const [showSkipModal, setShowSkipModal] = useState(false);
-  const hasSavedInfo = !!(savedBackgroundInfo?.userType);
+  const [hasConfirmed, setHasConfirmed] = useState(!user?.backgroundInfo?.userType);
 
   const handleTypeSelect = (type: string) => {
     setUserType(type);
@@ -96,6 +98,83 @@ export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ onComple
       default: return <HelpCircle className="w-6 h-6" />;
     }
   };
+
+  if (!hasConfirmed) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <h1 className="text-3xl font-bold text-gray-900 font-heading mb-4">
+              Confirm Your Details
+            </h1>
+            <p className="text-lg text-gray-600 font-sans">
+              We have these details saved for you. Do you want to continue with this information or make edits?
+            </p>
+          </div>
+
+          <Card className="mb-8 border-primary-100 shadow-lg">
+             <div className="space-y-4">
+              <div>
+                <span className="font-semibold text-gray-700">Status: </span>
+                <span className="text-gray-900">{USER_TYPES.find(t => t.id === userType)?.label}</span>
+              </div>
+
+              {userType === 'professional' && (
+                <>
+                  <div>
+                    <span className="font-semibold text-gray-700">Job Title: </span>
+                    <span className="text-gray-900">{details.jobTitle}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700">Experience: </span>
+                    <span className="text-gray-900">{details.yearsExperience} years</span>
+                  </div>
+                </>
+              )}
+
+              {['student', 'graduate'].includes(userType) && (
+                <>
+                  <div>
+                    <span className="font-semibold text-gray-700">Field of Study: </span>
+                    <span className="text-gray-900">{details.fieldOfStudy}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-gray-700">Specialization: </span>
+                    <span className="text-gray-900">{details.specialization}</span>
+                  </div>
+                </>
+              )}
+
+              {userType === 'other' && (
+                <div>
+                  <span className="font-semibold text-gray-700">Description: </span>
+                  <span className="text-gray-900">{details.currentStatus}</span>
+                </div>
+              )}
+             </div>
+          </Card>
+
+          <div className="flex justify-between items-center mt-8">
+            <button
+              onClick={() => setHasConfirmed(true)}
+              className="text-primary-600 hover:text-primary-700 font-medium px-4 py-2 rounded-lg hover:bg-primary-50 border border-primary-200 transition-colors font-sans"
+            >
+              Make Edits
+            </button>
+
+            <Button
+              onClick={handleSubmit}
+              size="lg"
+              className="px-8 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              icon={ArrowRight}
+            >
+              Continue Assessment
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
