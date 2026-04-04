@@ -22,7 +22,7 @@ interface BackgroundInfoPageProps {
   } | null;
 }
 
-export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ user, onComplete, onBack }) => {
+export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ user, onComplete, onBack, savedBackgroundInfo }) => {
   const [userType, setUserType] = useState<string>(user?.backgroundInfo?.userType || '');
   const [details, setDetails] = useState({
     jobTitle: user?.backgroundInfo?.details?.jobTitle || '',
@@ -33,6 +33,8 @@ export const BackgroundInfoPage: React.FC<BackgroundInfoPageProps> = ({ user, on
   });
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState(!user?.backgroundInfo?.userType);
+
+  const hasSavedInfo = !!savedBackgroundInfo;
 
   const handleTypeSelect = (type: string) => {
     setUserType(type);
