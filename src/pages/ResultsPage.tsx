@@ -171,6 +171,17 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
       }
       return acc;
     }, {} as Record<string, number>);
+  const friendlyStrengthNames: Record<string, string> = {
+    'Linguistic': 'Communication & Language',
+    'Logical-Mathematical': 'Logic & Numbers',
+    'Visual-Spatial': 'Visual & Spatial Design',
+    'Interpersonal': 'People & Teamwork',
+    'Intrapersonal': 'Self-Reflection & Focus',
+    'Naturalistic': 'Nature & Environment',
+    'Musical': 'Music & Rhythm',
+    'Bodily-Kinesthetic': 'Physical & Hands-on'
+  };
+
   const getTopStrengths = () => {
     return Object.entries(numericalScores)
       .sort(([,a], [,b]) => b - a)
@@ -340,8 +351,8 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-2xl shadow-sm p-2 inline-flex border border-gray-100">
+        <div className="flex justify-center mb-10">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md p-2 inline-flex flex-wrap justify-center gap-2 border border-gray-100">
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
               { id: 'detailed', label: 'Detailed Analysis', icon: PieChart },
@@ -351,13 +362,13 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                className={`flex items-center px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
                   activeTab === tab.id
-                    ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-lg'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-primary-600 to-purple-600 text-white shadow-md transform scale-105'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
                 }`}
               >
-                <tab.icon className="w-4 h-4 mr-2" />
+                <tab.icon className="w-5 h-5 mr-2" />
                 {tab.label}
               </button>
             ))}
@@ -369,13 +380,13 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
             {activeTab === 'overview' && (
               <>
                 {/* AI Insights */}
-                <Card className="bg-white border-primary-100">
+                <Card className="bg-gradient-to-br from-white to-gray-50 border-primary-100 shadow-md">
                   <div className="flex items-start">
-                    <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-3 rounded-full mr-4 shadow-lg">
-                      <Lightbulb className="w-6 h-6 text-white" />
+                    <div className="bg-gradient-to-r from-primary-600 to-purple-600 p-4 rounded-2xl mr-5 shadow-lg transform -rotate-3">
+                      <Lightbulb className="w-6 h-6 text-white transform rotate-3" />
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-2xl font-bold text-gray-900 mb-4 font-heading">AI Counselor Insights</h2>
+                      <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600 mb-4 font-heading">AI Counselor Insights</h2>
                       {loading ? (
                         <div className="animate-pulse space-y-4">
                           <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -396,13 +407,19 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                 {/* Top Strengths Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {getTopStrengths().slice(0, 3).map(([category, score], index) => (
-                    <Card key={category} className="text-center bg-white border-gray-100">
-                      <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-600 to-purple-600 rounded-full mb-4 shadow-lg">
-                        <Target className="w-6 h-6 text-white" />
+                    <Card key={category} className="relative overflow-hidden text-center bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-gradient-to-br from-primary-100 to-purple-100 rounded-full opacity-50 pointer-events-none"></div>
+                      <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-primary-600 to-purple-600 rounded-2xl mb-5 shadow-lg transform rotate-3">
+                        <Target className="w-7 h-7 text-white transform -rotate-3" />
                       </div>
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 font-heading">#{index + 1} Strength</h3>
-                      <p className="text-primary-600 font-semibold font-sans">{category}</p>
-                      <p className="text-2xl font-bold text-primary-700 mt-2 font-sans">{(score as number).toFixed(1)}/5.0</p>
+                      <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2 font-heading">#{index + 1} Strength</h3>
+                      <p className="text-xl text-gray-900 font-bold font-heading mb-1">{friendlyStrengthNames[category] || category}</p>
+                      <div className="flex items-center justify-center mt-3">
+                        <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-purple-600">
+                          {(score as number).toFixed(1)}
+                        </span>
+                        <span className="text-gray-400 font-medium ml-1">/5.0</span>
+                      </div>
                     </Card>
                   ))}
                 </div>
@@ -430,24 +447,26 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                   <h2 className="text-3xl font-bold text-gray-900 mb-6 font-heading">Detailed Analysis by Category</h2>
                   
                   {/* Intelligence Analysis */}
-                  <Card className="bg-blue-50 border-blue-100">
-                    <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center font-heading">
-                      <BookOpen className="w-5 h-5 mr-2" />
+                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100 shadow-md">
+                    <h3 className="text-xl font-bold text-blue-800 mb-6 flex items-center font-heading">
+                      <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                        <BookOpen className="w-5 h-5 text-blue-600" />
+                      </div>
                       Multiple Intelligences Analysis
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {Object.entries(numericalScores)
                         .filter(([category]) => ['Linguistic', 'Logical-Mathematical', 'Visual-Spatial', 'Interpersonal', 'Intrapersonal', 'Naturalistic'].includes(category))
                         .sort(([,a], [,b]) => (b as number) - (a as number))
                         .map(([category, score]) => (
-                          <div key={category} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-gray-800 font-heading">{category}</h4>
-                              <span className="text-blue-600 font-bold font-sans">{(score as number).toFixed(1)}</span>
+                          <div key={category} className="bg-white p-5 rounded-2xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="font-bold text-gray-800 font-heading">{category}</h4>
+                              <span className="bg-blue-100 text-blue-700 py-1 px-3 rounded-full text-sm font-bold font-sans">{(score as number).toFixed(1)}</span>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div className="w-full bg-blue-50 rounded-full h-3">
                               <div 
-                                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-500"
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-1000 ease-out"
                                 style={{ width: `${((score as number) / 5) * 100}%` }}
                               />
                             </div>
@@ -457,24 +476,26 @@ export const ResultsPage: React.FC<ResultsPageProps> = ({ assessment, user, prev
                   </Card>
 
                   {/* Personality Analysis */}
-                  <Card className="bg-purple-50 border-purple-100">
-                    <h3 className="text-xl font-bold text-purple-800 mb-4 flex items-center font-heading">
-                      <Users className="w-5 h-5 mr-2" />
+                  <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-100 shadow-md">
+                    <h3 className="text-xl font-bold text-purple-800 mb-6 flex items-center font-heading">
+                      <div className="bg-purple-100 p-2 rounded-lg mr-3">
+                        <Users className="w-5 h-5 text-purple-600" />
+                      </div>
                       Personality & Aptitude Analysis
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {Object.entries(numericalScores)
                         .filter(([category]) => !['Linguistic', 'Logical-Mathematical', 'Visual-Spatial', 'Interpersonal', 'Intrapersonal', 'Naturalistic'].includes(category))
                         .sort(([,a], [,b]) => (b as number) - (a as number))
                         .map(([category, score]) => (
-                          <div key={category} className="bg-white p-4 rounded-xl border border-purple-100 shadow-sm">
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-gray-800 font-heading">{category}</h4>
-                              <span className="text-purple-600 font-bold font-sans">{(score as number).toFixed(1)}</span>
+                          <div key={category} className="bg-white p-5 rounded-2xl border border-purple-100 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="font-bold text-gray-800 font-heading">{category}</h4>
+                              <span className="bg-purple-100 text-purple-700 py-1 px-3 rounded-full text-sm font-bold font-sans">{(score as number).toFixed(1)}</span>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div className="w-full bg-purple-50 rounded-full h-3">
                               <div 
-                                className="bg-gradient-to-r from-purple-500 to-pink-600 h-2 rounded-full transition-all duration-500"
+                                className="bg-gradient-to-r from-purple-500 to-pink-600 h-3 rounded-full transition-all duration-1000 ease-out"
                                 style={{ width: `${((score as number) / 5) * 100}%` }}
                               />
                             </div>

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { X, User, Calendar, Award, Eye, Trash2, Download, Settings, Trash } from 'lucide-react';
+import { X, User, Calendar, Award, Eye, Trash2, Download, Settings, Trash, Edit2, Save } from 'lucide-react';
 import { User as UserType, Assessment } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { ConfirmationModal } from '../ui/ConfirmationModal';
 import { supabase } from '../../services/supabaseClient';
+import { INDIAN_DEGREES, SPECIALIZATIONS, JOB_TITLES, USER_TYPES } from '../../data/backgroundOptions';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -27,8 +28,70 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [showSingleDeleteModal, setShowSingleDeleteModal] = useState<string | null>(null);
+  const [isEditingBackground, setIsEditingBackground] = useState(false);
+  const [backgroundForm, setBackgroundForm] = useState({
+    userType: user?.backgroundInfo?.userType || '',
+    jobTitle: user?.backgroundInfo?.details?.jobTitle || '',
+    yearsExperience: user?.backgroundInfo?.details?.yearsExperience || '',
+    fieldOfStudy: user?.backgroundInfo?.details?.fieldOfStudy || '',
+    specialization: user?.backgroundInfo?.details?.specialization || '',
+    currentStatus: user?.backgroundInfo?.details?.currentStatus || ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
 
   if (!isOpen || !user) return null;
+
+  const handleBackgroundChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setBackgroundForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const saveBackgroundInfo = async () => {
+    setIsSaving(true);
+    try {
+      const updatedBackgroundInfo = {
+        userType: backgroundForm.userType,
+        details: {
+          jobTitle: backgroundForm.userType === 'professional' ? backgroundForm.jobTitle : undefined,
+          yearsExperience: backgroundForm.userType === 'professional' ? backgroundForm.yearsExperience : undefined,
+          fieldOfStudy: ['student', 'graduate'].includes(backgroundForm.userType) ? backgroundForm.fieldOfStudy : undefined,
+          specialization: ['student', 'graduate'].includes(backgroundForm.userType) ? backgroundForm.specialization : undefined,
+          currentStatus: backgroundForm.userType === 'other' ? backgroundForm.currentStatus : undefined
+        }
+      };
+
+      const { error } = await supabase
+        .from('users')
+        .update({ background_info: updatedBackgroundInfo })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local user object
+      if (user) {
+        user.backgroundInfo = updatedBackgroundInfo as any;
+      }
+      setIsEditingBackground(false);
+    } catch (error) {
+      console.error('Failed to update background info:', error);
+      alert('Failed to update. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    // Reset to user's saved data
+    setBackgroundForm({
+      userType: user?.backgroundInfo?.userType || '',
+      jobTitle: user?.backgroundInfo?.details?.jobTitle || '',
+      yearsExperience: user?.backgroundInfo?.details?.yearsExperience || '',
+      fieldOfStudy: user?.backgroundInfo?.details?.fieldOfStudy || '',
+      specialization: user?.backgroundInfo?.details?.specialization || '',
+      currentStatus: user?.backgroundInfo?.details?.currentStatus || ''
+    });
+    setIsEditingBackground(false);
+  };
 
   const handleDeleteAssessment = async (assessmentId: string) => {
     setIsDeleting(assessmentId);
@@ -327,6 +390,120 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                         className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50"
                       />
                     </div>
+                  </div>
+                </Card>
+
+                <Card>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800">Background Information</h3>
+                    {!isEditingBackground ? (
+                      <Button variant="ghost" size="sm" icon={Edit2} onClick={() => setIsEditingBackground(true)}>
+                        Edit
+                      </Button>
+                    ) : (
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={handleCancelEdit}>Cancel</Button>
+                        <Button size="sm" icon={Save} onClick={saveBackgroundInfo} loading={isSaving}>Save</Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Status / Type</label>
+                      <select
+                        name="userType"
+                        value={backgroundForm.userType}
+                        onChange={handleBackgroundChange}
+                        disabled={!isEditingBackground}
+                        className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-50"
+                      >
+                        <option value="">Select type...</option>
+                        {USER_TYPES.map(type => (
+                          <option key={type.id} value={type.id}>{type.label}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {backgroundForm.userType === 'professional' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                          <select
+                            name="jobTitle"
+                            value={backgroundForm.jobTitle}
+                            onChange={handleBackgroundChange}
+                            disabled={!isEditingBackground}
+                            className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-50"
+                          >
+                            <option value="">Select title...</option>
+                            {JOB_TITLES.map(title => (
+                              <option key={title} value={title}>{title}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
+                          <input
+                            type="number"
+                            name="yearsExperience"
+                            value={backgroundForm.yearsExperience}
+                            onChange={handleBackgroundChange}
+                            disabled={!isEditingBackground}
+                            className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-50"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {['student', 'graduate'].includes(backgroundForm.userType) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Field of Study</label>
+                          <select
+                            name="fieldOfStudy"
+                            value={backgroundForm.fieldOfStudy}
+                            onChange={handleBackgroundChange}
+                            disabled={!isEditingBackground}
+                            className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-50"
+                          >
+                            <option value="">Select field...</option>
+                            {INDIAN_DEGREES.map(deg => (
+                              <option key={deg} value={deg}>{deg}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
+                          <select
+                            name="specialization"
+                            value={backgroundForm.specialization}
+                            onChange={handleBackgroundChange}
+                            disabled={!isEditingBackground}
+                            className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-50"
+                          >
+                            <option value="">Select specialization...</option>
+                            {SPECIALIZATIONS.map(spec => (
+                              <option key={spec} value={spec}>{spec}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {backgroundForm.userType === 'other' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea
+                          name="currentStatus"
+                          value={backgroundForm.currentStatus}
+                          onChange={handleBackgroundChange}
+                          disabled={!isEditingBackground}
+                          rows={3}
+                          className="w-full p-3 border border-gray-300 rounded-lg bg-white disabled:bg-gray-50"
+                        />
+                      </div>
+                    )}
                   </div>
                 </Card>
 

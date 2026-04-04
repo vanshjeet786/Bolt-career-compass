@@ -237,12 +237,19 @@ function App() {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('background_info')
+          .eq('id', session.user.id)
+          .single();
+
         const user = {
           id: session.user.id,
           name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
           email: session.user.email || '',
           createdAt: new Date(session.user.created_at),
-          assessments: []
+          assessments: [],
+          backgroundInfo: userProfile?.background_info || undefined
         };
         setUser(user);
         await loadUserAssessments(user.id);
@@ -275,12 +282,19 @@ function App() {
           // A SIGNED_IN event can fire on token refresh. To prevent redirecting the user
           // from a page they are on, we only set state to dashboard if it's a new user.
           if (session.user.id !== userRef.current?.id) {
+            const { data: userProfile } = await supabase
+              .from('users')
+              .select('background_info')
+              .eq('id', session.user.id)
+              .single();
+
             const newUser = {
               id: session.user.id,
               name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
               email: session.user.email || '',
               createdAt: new Date(session.user.created_at),
-              assessments: []
+              assessments: [],
+              backgroundInfo: userProfile?.background_info || undefined
             };
             setUser(newUser);
             await loadUserAssessments(newUser.id);
@@ -342,10 +356,23 @@ function App() {
     setCurrentState('background_info');
   };
 
-  const handleBackgroundInfoComplete = (info: any) => {
+  const handleBackgroundInfoComplete = async (info: any) => {
     setBackgroundInfo(info);
     if (user) {
       localStorage.setItem(`backgroundInfo_${user.id}`, JSON.stringify(info));
+
+      try {
+        const { error } = await supabase
+          .from('users')
+          .update({ background_info: info })
+          .eq('id', user.id);
+
+        if (!error) {
+          setUser({ ...user, backgroundInfo: info });
+        }
+      } catch (err) {
+        console.error('Failed to update background info', err);
+      }
     }
     setCurrentState('assessment');
   };
@@ -412,6 +439,7 @@ function App() {
 
         {currentState === 'background_info' && user && (
           <BackgroundInfoPage
+            user={user}
             onComplete={handleBackgroundInfoComplete}
             onBack={handleBackToDashboard}
           />

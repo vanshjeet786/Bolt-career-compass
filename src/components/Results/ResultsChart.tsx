@@ -9,13 +9,28 @@ interface ResultsChartProps {
 }
 
 export const ResultsChart: React.FC<ResultsChartProps> = ({ scores, type, title }) => {
+  const friendlyStrengthNames: Record<string, string> = {
+    'Linguistic': 'Communication & Language',
+    'Logical-Mathematical': 'Logic & Numbers',
+    'Visual-Spatial': 'Visual & Spatial Design',
+    'Interpersonal': 'People & Teamwork',
+    'Intrapersonal': 'Self-Reflection & Focus',
+    'Naturalistic': 'Nature & Environment',
+    'Musical': 'Music & Rhythm',
+    'Bodily-Kinesthetic': 'Physical & Hands-on'
+  };
+
   const data = Object.entries(scores)
     .filter(([_, score]) => typeof score === 'number')
-    .map(([category, score]) => ({
-      category: category.length > 15 ? category.substring(0, 15) + '...' : category,
-      score: Number(score),
-      fullName: category
-    }))
+    .map(([category, score]) => {
+      const displayCategory = friendlyStrengthNames[category] || category;
+      return {
+        category: displayCategory.length > 15 ? displayCategory.substring(0, 15) + '...' : displayCategory,
+        score: Number(score),
+        fullName: displayCategory,
+        originalName: category
+      };
+    })
     .sort((a, b) => b.score - a.score);
 
   if (data.length === 0) {
